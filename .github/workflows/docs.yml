@@ -20,6 +20,11 @@ concurrency:
 jobs:
   build:
     runs-on: [self-hosted, linux, x64, local]
+    env:
+      # This repo has no local bare mirror on the runners, and the global
+      # insteadOf rewrite for celestia-island/arona prefix-matches this repo
+      # name. Disable the rewrite so git talks to github.com directly.
+      GIT_CONFIG_COUNT: "0"
     steps:
       - uses: actions/checkout@v4
 
