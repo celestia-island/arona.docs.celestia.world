@@ -1,0 +1,58 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64, local]
+    steps:
+      - uses: actions/checkout@v4
+
+      # lagrange is preinstalled at /mnt/work/runner-shared/lagrange (refreshed
+      # from git master when lagrange changes) because GitHub-hosted runners
+      # fail at provisioning under the org billing plan. Fall back to a local
+      # cargo install when the shared binary is missing.
+      - name: Install lagrange
+        run: |
+          set -euo pipefail
+          if [ -x /mnt/work/runner-shared/lagrange/bin/lagrange ]; then
+            /mnt/work/runner-shared/lagrange/bin/lagrange --version
+            echo "/mnt/work/runner-shared/lagrange/bin" >> "$GITHUB_PATH"
+          else
+            cargo install lagrange-library --locked \
+              || cargo install --git https://github.com/celestia-island/lagrange --branch master lagrange-library
+          fi
+      - name: Build docs
+        run: lagrange build --src docs --out _site
+      - name: Set CNAME
+        run: echo "arona.docs.celestia.world" > _site/CNAME
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, linux, x64, local]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
