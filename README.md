@@ -31,6 +31,12 @@
 </div>
 <!-- markdownlint-enable MD033 MD041 MD036 -->
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/celestia-island/docs.celestia.world/master/res/screenshots/arona-terminal.svg"
+       alt="Arona serving the OpenAI-compatible /v1/models and /v1/chat/completions endpoints against the built-in mock upstream"
+       width="840" />
+</p>
+
 > Early development. Not yet ready for public use.
 
 ## What Arona is
