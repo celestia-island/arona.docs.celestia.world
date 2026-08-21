@@ -158,7 +158,7 @@ backend 通告它提供的模型 id，路由按此通告匹配请求：
 通告目标的任意 backend 服务：
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-chat" }
+{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
 ```
 
 别名通过 `/api/admin/aliases` admin 端点管理，立即生效。

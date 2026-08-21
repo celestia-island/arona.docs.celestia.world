@@ -197,7 +197,7 @@ resuelve primero en el routing, así que una solicitud para el alias la sirve el
 backend que anuncie el destino:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-chat" }
+{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
 ```
 
 Los aliases se gestionan mediante los endpoints de admin `/api/admin/aliases` y

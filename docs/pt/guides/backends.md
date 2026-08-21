@@ -189,7 +189,7 @@ primeiro no roteamento, então uma requisição pelo alias é servida por qualqu
 backend que anuncie o alvo:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-chat" }
+{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
 ```
 
 Aliases são gerenciados pelos endpoints de admin `/api/admin/aliases` e têm

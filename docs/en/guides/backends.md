@@ -183,7 +183,7 @@ in routing, so a request for the alias is served by whatever backend
 advertises the target:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-chat" }
+{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
 ```
 
 Aliases are managed through the `/api/admin/aliases` admin endpoints and take

@@ -103,7 +103,7 @@ Backend는 제공하는 모델 id를 광고하며, 라우터는 요청을 그 �
 Aliases는 요청된 모델 id를 대상 id에 매핑합니다. 라우팅에서 alias가 먼저 해석되므로, alias에 대한 요청은 대상을 광고하는 backend가 제공합니다:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-chat" }
+{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
 ```
 
 Aliases는 `/api/admin/aliases` admin 엔드포인트를 통해 관리되며 즉시 적용됩니다.
