@@ -197,7 +197,7 @@ im Routing zuerst aufgelöst, sodass eine Anfrage für den Alias von dem Backend
 bedient wird, das das Ziel kündigt:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
+{ "alias": "fast-chat", "target": "deepseek-chat" }
 ```
 
 Aliase werden über die Admin-Endpunkte `/api/admin/aliases` verwaltet und

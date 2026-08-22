@@ -103,7 +103,7 @@ backend は提供するモデル id をアドバタイズし、ルーターは�
 エイリアスは、リクエストされたモデル id をターゲット id にマッピングします。エイリアスはルーティングで最初に解決されるため、エイリアスへのリクエストはターゲットをアドバタイズする backend によって提供されます:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
+{ "alias": "fast-chat", "target": "deepseek-chat" }
 ```
 
 エイリアスは `/api/admin/aliases` 管理エンドポイントで管理され、即座に有効になります。

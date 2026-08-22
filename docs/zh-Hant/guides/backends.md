@@ -166,7 +166,7 @@ Aliases 將請求的模型 id 對映到目標 id。路由時會先解析 alias�
 alias 的請求會由宣告目標的 backend 提供服務：
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
+{ "alias": "fast-chat", "target": "deepseek-chat" }
 ```
 
 Aliases 透過 `/api/admin/aliases` 管理端點管理，立即生效。

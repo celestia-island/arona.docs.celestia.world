@@ -191,7 +191,7 @@ Backend рекламирует id моделей, которые он обслу
 который рекламирует цель:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
+{ "alias": "fast-chat", "target": "deepseek-chat" }
 ```
 
 Алиасами управляют через admin-endpoints `/api/admin/aliases`; изменения

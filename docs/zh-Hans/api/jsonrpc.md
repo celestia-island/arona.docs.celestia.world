@@ -95,7 +95,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model`（string）、`config?`（会话配置对象）、`conversation_id?`（string）、`ref_id?`（string，≤ 64 字符） | 针对提供 `model` 的 backend 打开全双工会话。返回 `{ "session_id", "stream_session" }`：`session_id` 用于 `realtime.event` / `realtime.stop`，并订阅 SSE 旁路的 `stream_session` 以接收 `realtime.event` 通知。可选的 `ref_id` 是用量归因引用（通常是调用方的会话 UUID），记录在该会话的每个 usage 行上——带上它时，即使响应零 token 也写行（本地语音引擎不上报 token），可通过 admin 用量查询（`POST /api/admin/usage/query`）查询。 |
+| `realtime.start` | JWT | `model`（string）、`config?`（会话配置对象）、`conversation_id?`（string） | 针对提供 `model` 的 backend 打开全双工会话。返回 `{ "session_id", "stream_session" }`：`session_id` 用于 `realtime.event` / `realtime.stop`，并订阅 SSE 旁路的 `stream_session` 以接收 `realtime.event` 通知。 |
 | `realtime.event` | JWT | `session_id`（string）、`event`（客户端事件——音频 append/commit/clear、图像帧、response create/cancel、会话停止） | 向打开的会话发送一个客户端事件；它被转发到上游 backend。返回 `{ "ok": true }`。 |
 | `realtime.stop` | JWT | `session_id`（string） | 关闭并移除会话。返回 `{ "removed": bool }`。 |
 
@@ -173,7 +173,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `usage.list` | JWT | `limit?`（integer，默认 50，限制 1–200）、`offset?`（integer，默认 0）、`project?`（string） | 调用方分页的 usage 记录，最新的在前，涵盖 API key 行（`arona-XX` 前缀）和 JWT 归属行（`jwt-<user-uuid>`）。返回 `{ "records", "total", "limit", "offset", "project" }`；`project` 过滤器只收窄到 key 标记的行。每条记录始终包含 `ref_id` 字段；仅当请求带归因引用（`x-celestia-ref` 请求头 / `realtime.start` 的 `ref_id`）时该字段非 `null`。 |
+| `usage.list` | JWT | `limit?`（integer，默认 50，限制 1–200）、`offset?`（integer，默认 0）、`project?`（string） | 调用方分页的 usage 记录，最新的在前，涵盖 API key 行（`arona-XX` 前缀）和 JWT 归属行（`jwt-<user-uuid>`）。返回 `{ "records", "total", "limit", "offset", "project" }`；`project` 过滤器只收窄到 key 标记的行。 |
 
 ## Billing
 

@@ -176,7 +176,7 @@ OpenAI](../api/openai-rest.md)).
 في التوجيه، لذا يُخدَم طلب الـ alias بأي backend يُعلن الهدف:
 
 ```json
-{ "alias": "fast-chat", "target": "deepseek-v4-flash" }
+{ "alias": "fast-chat", "target": "deepseek-chat" }
 ```
 
 تُدار الـ aliases عبر نقاط نهاية المشرف `/api/admin/aliases` وتدخل حيز
