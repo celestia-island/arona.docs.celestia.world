@@ -5,9 +5,10 @@ description: "Bearer token 管理面——通过 /api/admin/* 注册/列出/移�
 
 # Admin HTTP API
 
-`/api/admin/*` 接口管理 gateway 的 **backend**（上游模型提供商）和**别名**
-（模型名称 → 模型 id 重定向）。它是 RPC 管理平面的 HTTP 对应物（见
-[JSON-RPC API](./jsonrpc.md)），主要由运维人员和 admin UI 使用。
+`/api/admin/*` 接口管理 gateway 的 **backend**（上游模型提供商）、**别名**
+（模型名称 → 模型 id 重定向）和**用量查询**（聚合计量）。它是 RPC 管理平面的
+HTTP 对应物（见 [JSON-RPC API](./jsonrpc.md)），主要由运维人员和 admin UI
+使用。
 
 ## 认证
 
@@ -185,6 +186,112 @@ curl -X DELETE http://192.0.2.10:8080/api/admin/aliases \
 - 缺少 `alias` → `400` `missing_alias`。
 - 移除未知别名是无操作成功 → `200` `{ "status": "ok", "message": "alias removed" }`。
 
+## 用量
+
+Arona 是计量的唯一事实来源：每个产生 usage 行的代理请求都记录在
+`usage_records` 中。请求可以携带**归因引用**——`POST /v1/chat/completions`
+（流式与非流式）和 `POST /v1/embeddings` 上的 `x-celestia-ref` 请求头，或
+JSON-RPC `realtime.start` 方法的 `ref_id` 参数（通常是调用方服务选定的会话
+UUID）——存入该行的 `ref_id` 列。`POST /api/admin/usage/query` 对这些引用做
+聚合，让下游服务（如 shittim-chest）能对账它们归因的用量，而无需自建本地
+计量。
+
+### POST /api/admin/usage/query —— 聚合用量查询
+
+请求体（所有字段可选）：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `ref_ids` | string[] | 要聚合的归因引用（`WHERE ref_id = ANY(...)`）。缺失 / 为空 / 全为空白 → **全局**（所有行）。条目会被 trim；每条截断到 64 字符。 |
+| `since` | string | `created_at` 下界（含）。`YYYY-MM-DD`（该日零点，UTC）或 RFC3339 时间戳。 |
+| `until` | string | `created_at` 上界（不含）。`YYYY-MM-DD` 覆盖**整整天**（不含次日零点，UTC）；RFC3339 时间戳则是不含的那个时刻。 |
+| `group_by` | string | 额外按键聚合：`model` \| `backend` \| `ref` \| `day`（`day` = `created_at` 的 UTC 日桶，键格式 `YYYY-MM-DD`）。其他值 → `400` `bad_group_by`。 |
+| `limit` | integer | `include_records` 的页大小，限制 1–500，默认 100。 |
+| `offset` | integer | `include_records` 的页偏移，默认 0。 |
+| `include_records` | bool | 同时返回分页的原始行及 `records_total`。默认 `false`。 |
+
+所有过滤条件按 AND 组合。聚合完全在 SQL 内完成（`GROUP BY`，无内存全表扫
+描）；分组按 `total_tokens` 降序（同分按组键升序打破平局），原始行最新的在
+前（同刻按行 id）——两个排序都是确定性的，保证翻页稳定。
+
+```bash
+curl -X POST http://192.0.2.10:8080/api/admin/usage/query \
+  -H "Authorization: Bearer CHANGE_ME" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ref_ids": ["0b914cb6-2d71-4c55-9f1a-3f2b1c9d8e7f"],
+    "since": "2026-08-01",
+    "until": "2026-08-21",
+    "group_by": "model",
+    "include_records": false
+  }'
+```
+
+成功 → `200` —— `totals` 恒在；仅当设置了 `group_by` 才有 `groups`；仅当
+`include_records` 为 `true` 才有 `records` / `records_total` / `limit` /
+`offset`：
+
+```json
+{
+  "totals": {
+    "requests": 12,
+    "prompt_tokens": 3400,
+    "completion_tokens": 810,
+    "total_tokens": 4210,
+    "cost_usd": 0.0121
+  },
+  "groups": [
+    {
+      "key": "Qwen/Qwen3-1.7B",
+      "requests": 12,
+      "prompt_tokens": 3400,
+      "completion_tokens": 810,
+      "total_tokens": 4210,
+      "cost_usd": 0.0121
+    }
+  ]
+}
+```
+
+`include_records: true` 时每行携带 `id`、`ref_id`、`api_key_id`、`model`、
+`backend`、`prompt_tokens`、`completion_tokens`、`total_tokens`、`cost` 和
+`created_at`（RFC3339），最新的在前：
+
+```json
+{
+  "totals": { "requests": 1, "prompt_tokens": 120, "completion_tokens": 30,
+              "total_tokens": 150, "cost_usd": 0.0004 },
+  "records_total": 1,
+  "limit": 100,
+  "offset": 0,
+  "records": [
+    {
+      "id": "8f14e45f-ceea-467a-9eaa-3728a80d62a1",
+      "ref_id": "0b914cb6-2d71-4c55-9f1a-3f2b1c9d8e7f",
+      "api_key_id": "arona-Xy",
+      "model": "Qwen/Qwen3-1.7B",
+      "backend": "gateway",
+      "prompt_tokens": 120,
+      "completion_tokens": 30,
+      "total_tokens": 150,
+      "cost": 0.0004,
+      "created_at": "2026-08-20T09:30:12+00:00"
+    }
+  ]
+}
+```
+
+说明：
+
+- `cost_usd` 是 `SUM(cost)`，忽略 `NULL` cost（未定价模型的行和零 token 的
+  realtime 行贡献 `0`）。
+- 全局查询按 `ref` 分组时，无引用行的桶为 `"key": null`。
+- 带 `ref_id` 启动的 realtime 会话即使引擎上报零 token 也写 usage 行（本地
+  CEP 语音引擎）——这些行显示 `0` token 和 `null` cost。
+- 畸形的 `since`/`until` → `400` `bad_since` / `bad_until`；未知
+  `group_by` → `400` `bad_group_by`；数据库故障 → `500` `internal_error`
+  （详情在服务端日志）。
+
 ## 持久化总结
 
 | 资源 | 持久化？ | 重启恢复 |
@@ -192,6 +299,6 @@ curl -X DELETE http://192.0.2.10:8080/api/admin/aliases \
 | Backend | 是 —— `backend_configs` 表（`name` 键，注册时 upsert，移除时删除）。 | 是：启动时恢复；external backend 以 fail-closed 启动，首轮 probe 后转为 healthy。`evernight://` URL 在启动时通过桥接重新解析。 |
 | 别名 | 否 —— 仅内存 `Router.aliases`。 | 否。 |
 
-<!-- src: packages/core/src/gateway/server.rs:577-600 (check_admin), 588-698 (add_backend), 700-722 (list_backends_admin), 724-775 (remove_backend), 779-819 (add_alias_handler), 821-838 (list_aliases), 840-869 (remove_alias_handler); packages/core/src/backends/mod.rs:675-771 (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs:276-292 (aliases); packages/core/src/gateway/run.rs:87-132 (backend restore) -->
+<!-- src: packages/core/src/gateway/server.rs:577-600 (check_admin), 588-698 (add_backend), 700-722 (list_backends_admin), 724-775 (remove_backend), 779-819 (add_alias_handler), 821-838 (list_aliases), 840-869 (remove_alias_handler), admin_usage_query (POST /api/admin/usage/query); packages/core/src/billing/usage_query.rs (query parsing, SQL builders, executor); packages/core/src/backends/mod.rs:675-771 (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs:276-292 (aliases); packages/core/src/gateway/run.rs:87-132 (backend restore) -->
 
 <!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs:737-747. Also confirmed: aliases are in-memory only (routing/mod.rs:276-292); `workflow` is legacy and ignored by all current backends (backends/mod.rs:682-688); `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (backends/mod.rs:738-739, ollama.rs:57-91). -->
