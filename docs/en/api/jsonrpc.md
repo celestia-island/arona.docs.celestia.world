@@ -110,7 +110,7 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string) | Open a full-duplex session against the backend serving `model`. Returns `{ "session_id", "stream_session" }`: use `session_id` for `realtime.event` / `realtime.stop`, and subscribe to `stream_session` on the SSE sidecar to receive `realtime.event` notifications. |
+| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string), `ref_id?` (string, ≤ 64 chars) | Open a full-duplex session against the backend serving `model`. Returns `{ "session_id", "stream_session" }`: use `session_id` for `realtime.event` / `realtime.stop`, and subscribe to `stream_session` on the SSE sidecar to receive `realtime.event` notifications. The optional `ref_id` is a usage attribution reference (typically the caller's conversation UUID) recorded on every usage row of the session — with it, rows are written even for zero-token responses (local speech engines report no tokens), queryable via the admin usage query (`POST /api/admin/usage/query`). |
 | `realtime.event` | JWT | `session_id` (string), `event` (client event — audio append/commit/clear, image frame, response create/cancel, session stop) | Send one client event into an open session; it is forwarded to the upstream backend. Returns `{ "ok": true }`. |
 | `realtime.stop` | JWT | `session_id` (string) | Close and remove a session. Returns `{ "removed": bool }`. |
 
@@ -190,7 +190,7 @@ WebSocket; failures never block chat (see
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `usage.list` | JWT | `limit?` (integer, default 50, clamped to 1–200), `offset?` (integer, default 0), `project?` (string) | Paginated usage records for the caller, newest first, covering both API-key rows (`arona-XX` prefix) and JWT-attributed rows (`jwt-<user-uuid>`). Returns `{ "records", "total", "limit", "offset", "project" }`; the `project` filter narrows to key-tagged rows only. |
+| `usage.list` | JWT | `limit?` (integer, default 50, clamped to 1–200), `offset?` (integer, default 0), `project?` (string) | Paginated usage records for the caller, newest first, covering both API-key rows (`arona-XX` prefix) and JWT-attributed rows (`jwt-<user-uuid>`). Returns `{ "records", "total", "limit", "offset", "project" }`; the `project` filter narrows to key-tagged rows only. Every record includes its `ref_id` field, which is `null` unless the request was tagged with an attribution reference (`x-celestia-ref` header / `realtime.start` `ref_id`). |
 
 ## Billing
 
