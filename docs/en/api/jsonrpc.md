@@ -141,6 +141,24 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
+| `group.create` | JWT or admin token | `name`, `description?`, `id?` (uuid, idempotent bridge) | Create a group; the creator becomes owner + admin member. Returns the group. |
+| `group.list` | JWT or admin token | — | Groups the caller belongs to (id, name, my_role, member_count, allowlist flag). |
+| `group.get` | JWT (member) | `group_id` | Group detail + active members. |
+| `group.update` | group admin / platform | `group_id`, `name?`, `description?`, `enforce_model_allowlist?`, `rpm_ceiling?` (null clears) | Update group fields. Returns the group. |
+| `group.delete` | group owner | `group_id` | Delete the group (group keys detach, memberships cascade). |
+| `group.members.list` | group admin / platform | `group_id` | Active members with role, cost multiplier and state. |
+| `group.members.add` | group admin / platform | `group_id`, `email`, `role?` (admin\|member), `cost_multiplier?` | Add an existing platform user (upsert). Returns the member. |
+| `group.members.update` | group admin / platform | `group_id`, `user_id` (email), `role?`, `cost_multiplier?`, `is_active?` | Update a member; `is_active: false` is the kill switch that instantly invalidates their group keys. The owner cannot be deactivated or removed. |
+| `group.members.remove` | group admin / platform | `group_id`, `user_id` (email) | Remove a member (not the owner). |
+| `group.invite.create` | group admin / platform | `group_id`, `role?`, `email?`, `max_uses?`, `ttl_secs?` | Create an invitation; the token is visible exactly once. |
+| `group.invite.accept` | JWT | `token` | Accept an invitation; joins the group with the granted role. Single-use, expiry- and email-checked. |
+| `group.models.list` | group admin / platform | `group_id` | `{ allowed: [...], denied: [...] }` rows of the group allowlist. |
+| `group.models.allow` | group admin / platform | `group_id`, `model_ids[]` | Allow models (explicit deny rows win over allow). |
+| `group.models.deny` | group admin / platform | `group_id`, `model_ids[]` | Deny models (deny-override). |
+| `group.credits.topup` | platform admin | `group_id`, `points`, `note?` | Credit the group points pool. Returns the new balance. |
+| `group.credits.balance` | group admin / platform | `group_id` | Pool balance + recent ledger entries. |
+| `group.credits.allocate` | group admin / platform | `group_id`, `user_id` (email), `points`, `note?` | Atomically move points from the group pool into a member's personal wallet (refused whole on a short pool). |
+| `ledger.self` | JWT or admin token | — | The caller's personal points wallet: balance + recent entries. |
 | `providers.list` | **public** | — | List known providers: built-in official entries plus custom ones, as display metadata (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Public by design — the list carries no credentials; only the mutations below are admin-gated. |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Add a custom provider entry. Returns `{ "ok": true }`. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Update a custom provider's fields (only the provided ones). Returns `{ "ok": true }`. |

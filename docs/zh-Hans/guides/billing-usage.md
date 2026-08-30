@@ -110,6 +110,22 @@ JWT 认证的 `chat.send` 经过同样的月度配额门禁，但针对的是**�
 （`QUOTA_ERROR`），消息与 REST 配额拒绝相同。RPC 路径上没有每 key 限流——
 限流是 key 范围的，而 RPC 调用没有 key。`realtime.start` 经过同样的整用户月度配额门（配额耗尽时开启会话返回 `-32006`）；`video.create` 在任务创建时检查配额。
 
+## 积分账本（预付费，tier 兜底）
+
+组与用户各有钱包（`ledger_accounts`，用户一人一个个人钱包、一组一个资金池）。
+结算**积分优先**：每笔计量请求尝试从划账账户（组 key 划组池，否则个人钱包）
+扣除 `round(cost_usd × POINTS_PER_USD × 成员倍率)` —— 原子条件更新，并发扣减
+不可能透支。钱包不足时该请求回落到 tier 月度配额（后付费，行上 `points =
+NULL`）。**两者都耗尽**时 REST 门以 **402 Payment Required**
+（`insufficient_credits` / `payment_required`，`Retry-After` 至月底）拒绝；
+RPC 路径保持 `-32006` `QUOTA_ERROR` 形状。
+
+`POINTS_PER_USD` 来自环境变量（默认 100，即 1 积分 = 1 美分）。管理面：
+`group.credits.topup`（平台 admin）、`group.credits.allocate`（组 admin，
+组池→钱包原子划转）、`group.credits.balance`、`ledger.self`；`billing.plan`
+返回 `points_balance` 与 `points_per_usd`。由账本结算的用量行携带
+`points` 与 `account_type`（`user` | `group`）。
+
 ## Fail-open 权衡
 
 计费**设计上就是尽力而为**。如果配额或限流检查背后的数据库查询失败，检查返回

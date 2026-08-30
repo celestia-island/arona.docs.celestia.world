@@ -127,6 +127,27 @@ calls have no key. `realtime.start` passes through the same whole-user monthly q
 session open with an exhausted quota is rejected with `-32006`);
 `video.create` checks the quota at job creation.
 
+## Points ledger (prepaid, tier as backstop)
+
+Groups and users carry points wallets (`ledger_accounts`, one personal
+wallet per user and one pool per group). Settlement is **points-first**:
+every metered request tries to deduct
+`round(cost_usd × POINTS_PER_USD × member_multiplier)` from the drawing
+account (the group pool for group keys, the personal wallet otherwise) —
+atomic conditional updates, so concurrent deductions can never overdraw.
+When the wallet cannot cover the amount the request rides the tier
+monthly quota as before (postpaid, `points = NULL` on the row). When BOTH
+are drained the REST gate answers **402 Payment Required**
+(`insufficient_credits` / `payment_required`, `Retry-After` until month
+end); the RPC path keeps the `-32006` `QUOTA_ERROR` shape.
+
+`POINTS_PER_USD` comes from the env (default 100 — one point = one cent).
+Management surface: `group.credits.topup` (platform admin),
+`group.credits.allocate` (group admin, atomic pool→wallet transfer),
+`group.credits.balance`, `ledger.self`; `billing.plan` reports
+`points_balance` and `points_per_usd`. Usage rows settled from the ledger
+carry `points` and `account_type` (`user` | `group`).
+
 ## Fail-open tradeoff
 
 Billing is **best-effort by design**. If the database query behind a quota or
