@@ -123,7 +123,9 @@ against the **whole-user** window (the call carries no API key). A rejection
 is a JSON-RPC error with the implementation-defined code `-32006`
 (`QUOTA_ERROR`) and the same message as the REST quota rejection. There is no
 per-key rate limit on the RPC path — rate limiting is key-scoped and RPC
-calls have no key. Realtime and video **RPC** methods are not quota-gated.
+calls have no key. `realtime.start` passes through the same whole-user monthly quota gate (a
+session open with an exhausted quota is rejected with `-32006`);
+`video.create` checks the quota at job creation.
 
 ## Fail-open tradeoff
 
@@ -200,6 +202,6 @@ always agree on scope.
 
 <!-- src: packages/core/src/billing/mod.rs:452-573 (usage recording & cost), 284-337 (quota/rate-limit gates, fail-open), 421-433 (Retry-After); packages/core/src/migration/mod.rs:233-293 (usage_records schema), 333-339 (tier seed); packages/core/src/gateway/server.rs:492-539 (429 enforcement), 1036-1100/1269-1392 (chat & SSE recording); packages/core/src/gateway/rpc.rs:1075-1175 (usage.list), 1605-1638 (RPC quota gate); packages/core/src/billing/video.rs:20-86 (video pricing) -->
 
-<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: only chat.send is quota-gated on the RPC path (rpc.rs:1605-1638); realtime.start and video.create record usage but apply no quota gate (rpc.rs:1914-1984, 1296-1382). The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
+<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: chat.send and realtime.start are quota-gated on the RPC path against the whole-user monthly window; video.create checks quota at job creation. The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
 
 <!-- note: Realtime sessions additionally record per-response usage under jwt-<user-uuid> (gateway/realtime.rs:61-84) and video jobs record an explicit cost on completion (gateway/video.rs:230-238, 349-356); the fact sheet's three-channel list was extended with these two attribution paths. -->

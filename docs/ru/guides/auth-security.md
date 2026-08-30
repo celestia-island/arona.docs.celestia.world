@@ -161,7 +161,7 @@ Billing tiers несут per-ключевой `rate_limit_rpm`. Проверка
 стоит знать, когда вы открываете инстанс за пределы доверенной сети:
 
 - **`providers.list` публичен**, тогда как `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` требуют JWT. Публичный путь чтения
+  `providers.remove` / `providers.test` гейтятся admin (JWT + `users.is_admin`). Публичный путь чтения
   раскрывает каталог provider'ов, но ничего секретного.
 - **`/ws/agent` — неаутентифицированная плоскость управления**: GPU-агенты
   подключаются без учётных данных и саморегистрируются (кадры `register` /

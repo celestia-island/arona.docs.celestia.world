@@ -67,10 +67,10 @@ Tokens、部署進度與 realtime 事件**不會**在 WebSocket socket 上送達
 | `-32603` | Internal error | 未預期的伺服器失敗。 |
 | `-32000` | `APP_ERROR` | 一般應用程式錯誤——例如找不到 conversation／provider／agent、沒有可部署的在線 agent。 |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"`——缺少或無效的 JWT。admin-token 方法在 bearer token 與 `ARONA_ADMIN_TOKEN` 不符時也用它（`"Admin access required"`）。 |
-| `-32006` | `QUOTA_ERROR` | JWT 閘控的 RPC 方法（`chat.send`）每月計費 quota 超限。 |
-| `-32007` | `ADMIN_REQUIRED` | 已認證的**非管理員**呼叫 admin 閘控方法（`agents.*`、`engine.invoke`）；訊息包含方法特定的提示。 |
+| `-32006` | `QUOTA_ERROR` | JWT 閘控的 RPC 方法（`chat.send`、`realtime.start`）每月計費 quota 超限。 |
+| `-32007` | `ADMIN_REQUIRED` | 已認證的**非管理員**呼叫 admin 閘控方法（`agents.*`、`engine.invoke`、`providers.*` 變更）；訊息包含方法特定的提示。 |
 
-> `agents.*` 與 `engine.invoke` 方法僅限管理員：它們需要帳號具備
+> `agents.*`、`engine.invoke` 與 `providers.*` 變更方法僅限管理員：它們需要帳號具備
 > `users.is_admin = true` 的 JWT。已認證的非管理員以 `-32007`
 > （`ADMIN_REQUIRED`）被拒絕；未認證的呼叫者得到標準的 `AUTH_ERROR`，
 > 因此伺服器不會透露該方法是特權方法。
@@ -98,7 +98,7 @@ keys）。此圖例背後的完整 auth 模型見
 
 | 方法 | Auth | 參數 | 說明 |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model`（string）、`config?`（session 設定物件）、`conversation_id?`（string） | 對提供 `model` 的 backend 開啟全雙工 session。回傳 `{ "session_id", "stream_session" }`：用 `session_id` 呼叫 `realtime.event`／`realtime.stop`，並在 SSE sidecar 訂閱 `stream_session` 以接收 `realtime.event` 通知。 |
+| `realtime.start` | JWT | `model`（string）、`config?`（session 設定物件）、`conversation_id?`（string） | 對提供 `model` 的 backend 開啟全雙工 session。回傳 `{ "session_id", "stream_session" }`：用 `session_id` 呼叫 `realtime.event`／`realtime.stop`，並在 SSE sidecar 訂閱 `stream_session` 以接收 `realtime.event` 通知。 與 `chat.send` 一樣受計費閘門管制（整使用者月度 quota → `-32006`）。 |
 | `realtime.event` | JWT | `session_id`（string）、`event`（客戶端事件——audio append/commit/clear、image frame、response create/cancel、session stop） | 將一個客戶端事件送入開啟的 session；它會被轉發到 upstream backend。回傳 `{ "ok": true }`。 |
 | `realtime.stop` | JWT | `session_id`（string） | 關閉並移除 session。回傳 `{ "removed": bool }`。 |
 
@@ -129,11 +129,11 @@ keys）。此圖例背後的完整 auth 模型見
 
 | 方法 | Auth | 參數 | 說明 |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | 列出已知 providers：內建官方條目加自訂條目，作為顯示 metadata（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。刻意公開——清單不攜帶憑證；只有下面的變更操作是 JWT 閘控。 |
-| `providers.add` | JWT | `id`、`name`、`description?`、`website_domain?` | 新增自訂 provider 條目。回傳 `{ "ok": true }`。 |
-| `providers.update` | JWT | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自訂 provider 的欄位（只更新提供的那些）。回傳 `{ "ok": true }`。 |
-| `providers.remove` | JWT | `provider_id` | 移除自訂 provider。回傳 `{ "ok": true }`。 |
-| `providers.test` | JWT | — | 測試 provider 連線。Stub：回傳 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
+| `providers.list` | **public** | — | 列出已知 providers：內建官方條目加自訂條目，作為顯示 metadata（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。刻意公開——清單不攜帶憑證；只有下面的變更操作是 admin 閘控。 |
+| `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | 新增自訂 provider 條目。回傳 `{ "ok": true }`。 |
+| `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自訂 provider 的欄位（只更新提供的那些）。回傳 `{ "ok": true }`。 |
+| `providers.remove` | admin（JWT + is_admin） | `provider_id` | 移除自訂 provider。回傳 `{ "ok": true }`。 |
+| `providers.test` | admin（JWT + is_admin） | — | 測試 provider 連線。Stub：回傳 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
 
 ## Agents
 

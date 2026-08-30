@@ -77,10 +77,10 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 | `-32603` | Internal error | Непредвиденный сбой сервера. |
 | `-32000` | `APP_ERROR` | Общая ошибка приложения — например, диалог/provider/агент не найден, нет онлайн-агента для развёртывания. |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — отсутствующий или неверный JWT. Также используется методами admin-token, когда bearer-token не совпадает с `ARONA_ADMIN_TOKEN` (`"Admin access required"`). |
-| `-32006` | `QUOTA_ERROR` | Превышена месячная billing-квота для JWT-гейтимого RPC-метода (`chat.send`). |
-| `-32007` | `ADMIN_REQUIRED` | Аутентифицированный **не-администратор** вызывает гейтимый администратором метод (`agents.*`, `engine.invoke`); сообщение включает подсказку, специфичную для метода. |
+| `-32006` | `QUOTA_ERROR` | Превышена месячная billing-квота для JWT-гейтимого RPC-метода (`chat.send`, `realtime.start`). |
+| `-32007` | `ADMIN_REQUIRED` | Аутентифицированный **не-администратор** вызывает гейтимый администратором метод (`agents.*`, `engine.invoke`, мутации `providers.*`); сообщение включает подсказку, специфичную для метода. |
 
-> Методы `agents.*` и `engine.invoke` — только для администраторов: они
+> Методы `agents.*`, `engine.invoke` и мутации `providers.*` — только для администраторов: они
 > требуют JWT, у аккаунта которого `users.is_admin = true`. Аутентифицированный
 > не-администратор отклоняется с `-32007` (`ADMIN_REQUIRED`);
 > неаутентифицированный вызывающий получает стандартный `AUTH_ERROR`, чтобы
@@ -109,7 +109,7 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 
 | Метод | Auth | Params | Описание |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model` (string), `config?` (объект конфигурации сессии), `conversation_id?` (string) | Открыть полнодуплексную сессию против backend, обслуживающего `model`. Возвращает `{ "session_id", "stream_session" }`: используйте `session_id` для `realtime.event` / `realtime.stop` и подпишитесь на `stream_session` на SSE-sidecar, чтобы получать уведомления `realtime.event`. |
+| `realtime.start` | JWT | `model` (string), `config?` (объект конфигурации сессии), `conversation_id?` (string) | Открыть полнодуплексную сессию против backend, обслуживающего `model`. Возвращает `{ "session_id", "stream_session" }`: используйте `session_id` для `realtime.event` / `realtime.stop` и подпишитесь на `stream_session` на SSE-sidecar, чтобы получать уведомления `realtime.event`. Под биллинг-гейтом как `chat.send` (месячная квота на пользователя целиком → `-32006`). |
 | `realtime.event` | JWT | `session_id` (string), `event` (событие клиента — append/commit/clear аудио, кадр изображения, create/cancel ответа, stop сессии) | Отправить одно событие клиента в открытую сессию; оно пересылается upstream-backend. Возвращает `{ "ok": true }`. |
 | `realtime.stop` | JWT | `session_id` (string) | Закрыть и удалить сессию. Возвращает `{ "removed": bool }`. |
 
@@ -140,11 +140,11 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 
 | Метод | Auth | Params | Описание |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | Список известных provider'ов: встроенные официальные записи плюс кастомные, как display-метаданные (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Публичен по дизайну — список не несёт учётных данных; только мутации ниже гейтятся JWT. |
-| `providers.add` | JWT | `id`, `name`, `description?`, `website_domain?` | Добавить запись кастомного provider'а. Возвращает `{ "ok": true }`. |
-| `providers.update` | JWT | `provider_id`, `name?`, `description?`, `website_domain?` | Обновить поля кастомного provider'а (только переданные). Возвращает `{ "ok": true }`. |
-| `providers.remove` | JWT | `provider_id` | Удалить кастомного provider'а. Возвращает `{ "ok": true }`. |
-| `providers.test` | JWT | — | Протестировать соединение с provider'ом. Stub: возвращает `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
+| `providers.list` | **public** | — | Список известных provider'ов: встроенные официальные записи плюс кастомные, как display-метаданные (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Публичен по дизайну — список не несёт учётных данных; только мутации ниже гейтятся admin. |
+| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Добавить запись кастомного provider'а. Возвращает `{ "ok": true }`. |
+| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Обновить поля кастомного provider'а (только переданные). Возвращает `{ "ok": true }`. |
+| `providers.remove` | admin (JWT + is_admin) | `provider_id` | Удалить кастомного provider'а. Возвращает `{ "ok": true }`. |
+| `providers.test` | admin (JWT + is_admin) | — | Протестировать соединение с provider'ом. Stub: возвращает `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
 
 ## Agents
 

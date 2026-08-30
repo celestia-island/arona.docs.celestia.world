@@ -40,10 +40,10 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 | `-32603` | Internal error | إخفاق خادم غير متوقع. |
 | `-32000` | `APP_ERROR` | خطأ تطبيق عام — مثل عدم العثور على محادثة/provider/وكيل، أو عدم توفر وكيل متصل للنشر. |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — JWT مفقود أو غير صالح. وتُستخدم أيضًا بواسطة طرق admin token عندما لا يطابق token الحامل `ARONA_ADMIN_TOKEN` (`"Admin access required"`). |
-| `-32006` | `QUOTA_ERROR` | تجاوز الحصة الشهرية للفوترة لطريقة RPC مقيدة بـ JWT (`chat.send`). |
-| `-32007` | `ADMIN_REQUIRED` | مستدعٍ مصادَق **غير إداري** لطريقة مقيدة بالإدارة (`agents.*`، `engine.invoke`)؛ تتضمن الرسالة تلميحًا خاصًا بالطريقة. |
+| `-32006` | `QUOTA_ERROR` | تجاوز الحصة الشهرية للفوترة لطريقة RPC مقيدة بـ JWT (`chat.send`، `realtime.start`). |
+| `-32007` | `ADMIN_REQUIRED` | مستدعٍ مصادَق **غير إداري** لطريقة مقيدة بالإدارة (`agents.*`، `engine.invoke`، تعديلات `providers.*`)؛ تتضمن الرسالة تلميحًا خاصًا بالطريقة. |
 
-> طريقتا `agents.*` و`engine.invoke` للإدارة فقط: تتطلبان JWT
+> طريقتا `agents.*` و`engine.invoke` وتعديلات `providers.*` للإدارة فقط: تتطلبان JWT
 > لحساب يحمل `users.is_admin = true`. يُرفض غير الإداري المصادَق
 > بـ `-32007` (`ADMIN_REQUIRED`)؛ ويحصل المستدعي غير المصادَق
 > على `AUTH_ERROR` القياسي حتى لا يكشف الخادم
@@ -70,7 +70,7 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 
 | الطريقة | المصادقة | المعاملات | الوصف |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string) | افتح جلسة ثنائية الاتجاه كاملة ضد backend الذي يخدم `model`. تعيد `{ "session_id", "stream_session" }`: استخدم `session_id` لـ `realtime.event` / `realtime.stop`، واشترك في `stream_session` على الـ sidecar SSE لتلقي إشعارات `realtime.event`. |
+| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string) | افتح جلسة ثنائية الاتجاه كاملة ضد backend الذي يخدم `model`. تعيد `{ "session_id", "stream_session" }`: استخدم `session_id` لـ `realtime.event` / `realtime.stop`، واشترك في `stream_session` على الـ sidecar SSE لتلقي إشعارات `realtime.event`. خاضعة لبوابة الفوترة مثل `chat.send` (الحصة الشهرية للمستخدم بالكامل → `-32006`). |
 | `realtime.event` | JWT | `session_id` (string), `event` (client event — audio append/commit/clear, image frame, response create/cancel, session stop) | أرسل حدث عميل واحدًا إلى جلسة مفتوحة؛ يُمرَّر إلى backend المنبع. تعيد `{ "ok": true }`. |
 | `realtime.stop` | JWT | `session_id` (string) | أغلق جلسة وأزلها. تعيد `{ "removed": bool }`. |
 
@@ -101,11 +101,11 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 
 | الطريقة | المصادقة | المعاملات | الوصف |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | اسرد المزوّدين المعروفين: الإدخالات الرسمية المدمجة إضافة إلى المخصصة، كبيانات تعريفية للعرض (`id`، `name`، `description`، `website_domain`، `is_official`، `is_operator`). عامة عن قصد — لا تحمل القائمة أي بيانات اعتماد؛ فقط التعديلات أدناه مقيدة بـ JWT. |
-| `providers.add` | JWT | `id`, `name`, `description?`, `website_domain?` | أضف إدخال مزوّد مخصصًا. تعيد `{ "ok": true }`. |
-| `providers.update` | JWT | `provider_id`, `name?`, `description?`, `website_domain?` | حدّث حقول مزوّد مخصص (الحقول المقدَّمة فقط). تعيد `{ "ok": true }`. |
-| `providers.remove` | JWT | `provider_id` | أزل مزوّدًا مخصصًا. تعيد `{ "ok": true }`. |
-| `providers.test` | JWT | — | اختبر اتصال مزوّد. كعب (stub): تعيد `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
+| `providers.list` | **public** | — | اسرد المزوّدين المعروفين: الإدخالات الرسمية المدمجة إضافة إلى المخصصة، كبيانات تعريفية للعرض (`id`، `name`، `description`، `website_domain`، `is_official`، `is_operator`). عامة عن قصد — لا تحمل القائمة أي بيانات اعتماد؛ فقط التعديلات أدناه مقيدة بالإدارة (admin). |
+| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | أضف إدخال مزوّد مخصصًا. تعيد `{ "ok": true }`. |
+| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | حدّث حقول مزوّد مخصص (الحقول المقدَّمة فقط). تعيد `{ "ok": true }`. |
+| `providers.remove` | admin (JWT + is_admin) | `provider_id` | أزل مزوّدًا مخصصًا. تعيد `{ "ok": true }`. |
+| `providers.test` | admin (JWT + is_admin) | — | اختبر اتصال مزوّد. كعب (stub): تعيد `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
 
 ## الوكلاء
 

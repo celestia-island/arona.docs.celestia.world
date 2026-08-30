@@ -77,10 +77,10 @@ Veja o catálogo completo em [Eventos e notificações](./events.md).
 | `-32603` | Internal error | Falha inesperada do servidor. |
 | `-32000` | `APP_ERROR` | Erro de aplicação genérico — ex. conversa/provider/agent não encontrado, nenhum agent online disponível para deploy. |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — JWT ausente ou inválido. Também usado por métodos de admin-token quando o bearer token não corresponde a `ARONA_ADMIN_TOKEN` (`"Admin access required"`). |
-| `-32006` | `QUOTA_ERROR` | Cota mensal de billing excedida para um método RPC com gate de JWT (`chat.send`). |
-| `-32007` | `ADMIN_REQUIRED` | **Não-admin** autenticado chamando um método com gate de admin (`agents.*`, `engine.invoke`); a mensagem inclui uma dica específica do método. |
+| `-32006` | `QUOTA_ERROR` | Cota mensal de billing excedida para um método RPC com gate de JWT (`chat.send`, `realtime.start`). |
+| `-32007` | `ADMIN_REQUIRED` | **Não-admin** autenticado chamando um método com gate de admin (`agents.*`, `engine.invoke`, mutações de `providers.*`); a mensagem inclui uma dica específica do método. |
 
-> Os métodos `agents.*` e `engine.invoke` são somente-admin: eles exigem um
+> Os métodos `agents.*`, `engine.invoke` e as mutações de `providers.*` são somente-admin: eles exigem um
 > JWT cuja conta tenha `users.is_admin = true`. Um não-admin autenticado é
 > rejeitado com `-32007` (`ADMIN_REQUIRED`); um caller não autenticado
 > recebe o padrão `AUTH_ERROR`, para que o servidor não revele que o
@@ -110,7 +110,7 @@ completo por trás desta legenda.
 
 | Método | Auth | Params | Descrição |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model` (string), `config?` (objeto de configuração de sessão), `conversation_id?` (string) | Abre uma sessão full-duplex contra o backend que serve `model`. Retorna `{ "session_id", "stream_session" }`: use `session_id` para `realtime.event` / `realtime.stop`, e assine `stream_session` no sidecar SSE para receber notificações `realtime.event`. |
+| `realtime.start` | JWT | `model` (string), `config?` (objeto de configuração de sessão), `conversation_id?` (string) | Abre uma sessão full-duplex contra o backend que serve `model`. Retorna `{ "session_id", "stream_session" }`: use `session_id` para `realtime.event` / `realtime.stop`, e assine `stream_session` no sidecar SSE para receber notificações `realtime.event`. Sujeita ao gate de billing como `chat.send` (cota mensal do usuário inteiro → `-32006`). |
 | `realtime.event` | JWT | `session_id` (string), `event` (evento de cliente — append/commit/clear de áudio, frame de imagem, response create/cancel, session stop) | Envia um evento de cliente para dentro de uma sessão aberta; ele é encaminhado ao backend upstream. Retorna `{ "ok": true }`. |
 | `realtime.stop` | JWT | `session_id` (string) | Fecha e remove uma sessão. Retorna `{ "removed": bool }`. |
 
@@ -141,11 +141,11 @@ completo por trás desta legenda.
 
 | Método | Auth | Params | Descrição |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | Lista providers conhecidos: entradas oficiais integradas mais as customizadas, como metadados de exibição (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Público por design — a lista não carrega credenciais; apenas as mutações abaixo têm gate de JWT. |
-| `providers.add` | JWT | `id`, `name`, `description?`, `website_domain?` | Adiciona uma entrada de provider customizada. Retorna `{ "ok": true }`. |
-| `providers.update` | JWT | `provider_id`, `name?`, `description?`, `website_domain?` | Atualiza os campos de um provider customizado (apenas os fornecidos). Retorna `{ "ok": true }`. |
-| `providers.remove` | JWT | `provider_id` | Remove um provider customizado. Retorna `{ "ok": true }`. |
-| `providers.test` | JWT | — | Testa uma conexão de provider. Stub: retorna `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
+| `providers.list` | **public** | — | Lista providers conhecidos: entradas oficiais integradas mais as customizadas, como metadados de exibição (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Público por design — a lista não carrega credenciais; apenas as mutações abaixo têm gate de admin. |
+| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Adiciona uma entrada de provider customizada. Retorna `{ "ok": true }`. |
+| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Atualiza os campos de um provider customizado (apenas os fornecidos). Retorna `{ "ok": true }`. |
+| `providers.remove` | admin (JWT + is_admin) | `provider_id` | Remove um provider customizado. Retorna `{ "ok": true }`. |
+| `providers.test` | admin (JWT + is_admin) | — | Testa uma conexão de provider. Stub: retorna `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
 
 ## Agents
 

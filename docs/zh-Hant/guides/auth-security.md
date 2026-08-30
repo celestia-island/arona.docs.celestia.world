@@ -136,7 +136,8 @@ Billing tiers 攜帶 per-key 的 `rate_limit_rpm`。檢查會計算該 key 前�
 網路之外時值得知道：
 
 - **`providers.list` 是公開的**，而 `providers.add`／`providers.update`／
-  `providers.remove`／`providers.test` 需要 JWT。公開讀取路徑會揭露
+  `providers.remove`／`providers.test` 受 admin 閘控（JWT + `users.is_admin`）。
+  公開讀取路徑會揭露
   provider 目錄，但沒有機密內容。
 - **`/ws/agent` 是不需認證的控制平面**：GPU agents 不用任何憑證連線並
   自行註冊（`register`／`heartbeat`／command-result frames）。任何能連到

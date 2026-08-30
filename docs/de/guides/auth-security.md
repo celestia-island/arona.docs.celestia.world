@@ -169,8 +169,8 @@ oder vorerst akzeptiert, aber wissenswert, wenn Sie eine Instanz über ein
 vertrauenswürdiges Netz hinaus exponieren:
 
 - **`providers.list` ist öffentlich**, während `providers.add` /
-  `providers.update` / `providers.remove` / `providers.test` ein JWT
-  erfordern. Der öffentliche Lesepfad offenbart den Provider-Katalog, aber
+  `providers.update` / `providers.remove` / `providers.test` sind admin-gesperrt
+  (JWT + `users.is_admin`). Der öffentliche Lesepfad offenbart den Provider-Katalog, aber
   nichts Geheimes.
 - **`/ws/agent` ist eine nicht authentifizierte Control-Plane**: GPU-Agenten
   verbinden sich ohne Credential und registrieren sich selbst (`register` /

@@ -65,10 +65,10 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | `-32603` | Internal error | 意外的服务器故障。 |
 | `-32000` | `APP_ERROR` | 通用应用错误——例如会话/provider/agent 不存在、没有在线 agent 可供部署。 |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` —— JWT 缺失或无效。admin token 方法的 bearer token 与 `ARONA_ADMIN_TOKEN` 不匹配时也使用（`"Admin access required"`）。 |
-| `-32006` | `QUOTA_ERROR` | JWT 门控 RPC 方法（`chat.send`）的月度计费配额超限。 |
-| `-32007` | `ADMIN_REQUIRED` | 已认证**非管理员**调用 admin 门控方法（`agents.*`、`engine.invoke`）；消息包含方法专属提示。 |
+| `-32006` | `QUOTA_ERROR` | JWT 门控 RPC 方法（`chat.send`、`realtime.start`）的月度计费配额超限。 |
+| `-32007` | `ADMIN_REQUIRED` | 已认证**非管理员**调用 admin 门控方法（`agents.*`、`engine.invoke`、`providers.*` 变更）；消息包含方法专属提示。 |
 
-> `agents.*` 和 `engine.invoke` 方法仅限 admin：它们要求账号
+> `agents.*`、`engine.invoke` 和 `providers.*` 变更方法仅限 admin：它们要求账号
 > `users.is_admin = true` 的 JWT。已认证的非管理员以 `-32007`
 > （`ADMIN_REQUIRED`）被拒绝；未认证的调用方得到标准的 `AUTH_ERROR`，
 > 服务器不会暴露该方法是有特权的。
@@ -95,7 +95,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model`（string）、`config?`（会话配置对象）、`conversation_id?`（string）、`ref_id?`（string，≤ 64 字符） | 针对提供 `model` 的 backend 打开全双工会话。返回 `{ "session_id", "stream_session" }`：`session_id` 用于 `realtime.event` / `realtime.stop`，并订阅 SSE 旁路的 `stream_session` 以接收 `realtime.event` 通知。可选的 `ref_id` 是用量归因引用（通常是调用方的会话 UUID），记录在该会话的每个 usage 行上——带上它时，即使响应零 token 也写行（本地语音引擎不上报 token），可通过 admin 用量查询（`POST /api/admin/usage/query`）查询。 |
+| `realtime.start` | JWT | `model`（string）、`config?`（会话配置对象）、`conversation_id?`（string）、`ref_id?`（string，≤ 64 字符） | 针对提供 `model` 的 backend 打开全双工会话。返回 `{ "session_id", "stream_session" }`：`session_id` 用于 `realtime.event` / `realtime.stop`，并订阅 SSE 旁路的 `stream_session` 以接收 `realtime.event` 通知。可选的 `ref_id` 是用量归因引用（通常是调用方的会话 UUID），记录在该会话的每个 usage 行上——带上它时，即使响应零 token 也写行（本地语音引擎不上报 token），可通过 admin 用量查询（`POST /api/admin/usage/query`）查询。 与 `chat.send` 一样受计费门控（整用户月度配额 → `-32006`）。 |
 | `realtime.event` | JWT | `session_id`（string）、`event`（客户端事件——音频 append/commit/clear、图像帧、response create/cancel、会话停止） | 向打开的会话发送一个客户端事件；它被转发到上游 backend。返回 `{ "ok": true }`。 |
 | `realtime.stop` | JWT | `session_id`（string） | 关闭并移除会话。返回 `{ "removed": bool }`。 |
 
@@ -126,11 +126,11 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | 列出已知 provider：内置官方条目加自定义条目，作为展示元数据（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。按设计公开——列表不携带凭据；只有下面的变更操作受 JWT 门控。 |
-| `providers.add` | JWT | `id`、`name`、`description?`、`website_domain?` | 添加自定义 provider 条目。返回 `{ "ok": true }`。 |
-| `providers.update` | JWT | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自定义 provider 的字段（只更新提供的）。返回 `{ "ok": true }`。 |
-| `providers.remove` | JWT | `provider_id` | 移除自定义 provider。返回 `{ "ok": true }`。 |
-| `providers.test` | JWT | — | 测试 provider 连接。Stub：返回 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
+| `providers.list` | **public** | — | 列出已知 provider：内置官方条目加自定义条目，作为展示元数据（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。按设计公开——列表不携带凭据；只有下面的变更操作受 admin 门控。 |
+| `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | 添加自定义 provider 条目。返回 `{ "ok": true }`。 |
+| `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自定义 provider 的字段（只更新提供的）。返回 `{ "ok": true }`。 |
+| `providers.remove` | admin（JWT + is_admin） | `provider_id` | 移除自定义 provider。返回 `{ "ok": true }`。 |
+| `providers.test` | admin（JWT + is_admin） | — | 测试 provider 连接。Stub：返回 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
 
 ## Agents
 

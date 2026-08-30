@@ -169,7 +169,8 @@ acceptés pour l'instant, mais bons à connaître quand vous exposez une instanc
 au-delà d'un réseau de confiance :
 
 - **`providers.list` est public**, tandis que `providers.add` /
-  `providers.update` / `providers.remove` / `providers.test` requièrent un JWT.
+  `providers.update` / `providers.remove` / `providers.test` sont gardées par admin
+  (JWT + `users.is_admin`).
   Le chemin de lecture public révèle le catalogue de providers mais rien de
   secret.
 - **`/ws/agent` est un plan de contrôle non authentifié** : les agents GPU se

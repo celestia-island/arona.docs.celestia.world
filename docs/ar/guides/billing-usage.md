@@ -85,7 +85,7 @@ Retry-After: <seconds>
 
 ### RPC
 
-يمر `chat.send` الموثَّق بـ JWT عبر بوابة الحصة الشهرية نفسها، لكن مقابل نافذة **المستخدم بالكامل** (لا يحمل الاستدعاء أي API key). الرفض هو خطأ JSON-RPC برمز محدد من طرف التطبيق `-32006` (`QUOTA_ERROR`) ونفس رسالة رفض الحصة في REST. لا يوجد حد معدل لكل مفتاح في مسار RPC — فحدود المعدل مرتبطة بالمفتاح واستدعاءات RPC لا تحمل مفتاحًا. أساليب الـ realtime والـ video **عبر RPC** لا تخضع لبوابة الحصص.
+يمر `chat.send` الموثَّق بـ JWT عبر بوابة الحصة الشهرية نفسها، لكن مقابل نافذة **المستخدم بالكامل** (لا يحمل الاستدعاء أي API key). الرفض هو خطأ JSON-RPC برمز محدد من طرف التطبيق `-32006` (`QUOTA_ERROR`) ونفس رسالة رفض الحصة في REST. لا يوجد حد معدل لكل مفتاح في مسار RPC — فحدود المعدل مرتبطة بالمفتاح واستدعاءات RPC لا تحمل مفتاحًا. يمر `realtime.start` عبر بوابة الحصة الشهرية نفسها للمستخدم بالكامل (فتح جلسة بحصة مستنفدة يُرفض بـ `-32006`)؛ ويفحص `video.create` الحصة عند إنشاء المهمة.
 
 ## مفاضلة الـ fail-open
 
@@ -137,6 +137,6 @@ Retry-After: <seconds>
 
 <!-- src: packages/core/src/billing/mod.rs:452-573 (usage recording & cost), 284-337 (quota/rate-limit gates, fail-open), 421-433 (Retry-After); packages/core/src/migration/mod.rs:233-293 (usage_records schema), 333-339 (tier seed); packages/core/src/gateway/server.rs:492-539 (429 enforcement), 1036-1100/1269-1392 (chat & SSE recording); packages/core/src/gateway/rpc.rs:1075-1175 (usage.list), 1605-1638 (RPC quota gate); packages/core/src/billing/video.rs:20-86 (video pricing) -->
 
-<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: only chat.send is quota-gated on the RPC path (rpc.rs:1605-1638); realtime.start and video.create record usage but apply no quota gate (rpc.rs:1914-1984, 1296-1382). The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
+<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: chat.send and realtime.start are quota-gated on the RPC path against the whole-user monthly window; video.create checks quota at job creation. The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
 
 <!-- note: Realtime sessions additionally record per-response usage under jwt-<user-uuid> (gateway/realtime.rs:61-84) and video jobs record an explicit cost on completion (gateway/video.rs:230-238, 349-356); the fact sheet's three-channel list was extended with these two attribution paths. -->

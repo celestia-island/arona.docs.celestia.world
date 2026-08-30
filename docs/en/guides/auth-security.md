@@ -154,7 +154,8 @@ The following are documented as-is; they are intentional or accepted for now,
 but worth knowing when you expose an instance beyond a trusted network:
 
 - **`providers.list` is public**, while `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` require a JWT. The public read path
+  `providers.remove` / `providers.test` are admin-gated (JWT + `users.is_admin`).
+  The public read path
   reveals the provider catalog but nothing secret.
 - **`/ws/agent` is an unauthenticated control plane**: GPU agents connect
   with no credential and self-register (`register` / `heartbeat` /

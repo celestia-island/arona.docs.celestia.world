@@ -114,7 +114,7 @@ JWT 認證的 `chat.send` 會通過相同的每月 quota 閘門，但對照的�
 **整個使用者**的視窗（呼叫不攜帶 API key）。拒絕是 JSON-RPC 錯誤，
 code 為實作定義的 `-32006`（`QUOTA_ERROR`），訊息與 REST quota 拒絕相同。
 RPC 路徑沒有 per-key 速率限制——速率限制以 key 為範圍，而 RPC 呼叫沒有
-key。Realtime 與視訊的 **RPC** 方法不受 quota 閘門限制。
+key。`realtime.start` 經過同樣的整使用者月度 quota 閘門（quota 耗盡時開啟 session 會回傳 `-32006`）；`video.create` 在任務建立時檢查 quota。
 
 ## Fail-open 取捨
 
@@ -186,6 +186,6 @@ API-key 列（經由 key 前綴 join）與 JWT 歸因列（經由合成的
 
 <!-- src: packages/core/src/billing/mod.rs:452-573 (usage recording & cost), 284-337 (quota/rate-limit gates, fail-open), 421-433 (Retry-After); packages/core/src/migration/mod.rs:233-293 (usage_records schema), 333-339 (tier seed); packages/core/src/gateway/server.rs:492-539 (429 enforcement), 1036-1100/1269-1392 (chat & SSE recording); packages/core/src/gateway/rpc.rs:1075-1175 (usage.list), 1605-1638 (RPC quota gate); packages/core/src/billing/video.rs:20-86 (video pricing) -->
 
-<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: only chat.send is quota-gated on the RPC path (rpc.rs:1605-1638); realtime.start and video.create record usage but apply no quota gate (rpc.rs:1914-1984, 1296-1382). The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
+<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: chat.send and realtime.start are quota-gated on the RPC path against the whole-user monthly window; video.create checks quota at job creation. The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
 
 <!-- note: Realtime sessions additionally record per-response usage under jwt-<user-uuid> (gateway/realtime.rs:61-84) and video jobs record an explicit cost on completion (gateway/video.rs:230-238, 349-356); the fact sheet's three-channel list was extended with these two attribution paths. -->

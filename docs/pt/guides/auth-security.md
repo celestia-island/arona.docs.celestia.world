@@ -158,7 +158,7 @@ Os itens a seguir são documentados como estão; são intencionais ou aceitos po
 enquanto, mas vale saber ao expor uma instância além de uma rede confiável:
 
 - **`providers.list` é público**, enquanto `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` exigem um JWT. O caminho de leitura
+  `providers.remove` / `providers.test` têm gate de admin (JWT + `users.is_admin`). O caminho de leitura
   público revela o catálogo de providers, mas nada secreto.
 - **`/ws/agent` é um plano de controle não autenticado**: agents de GPU se
   conectam sem credencial e se auto-registram (frames `register` / `heartbeat` /

@@ -38,10 +38,10 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 | `-32603` | Internal error | 予期しないサーバー障害。 |
 | `-32000` | `APP_ERROR` | 汎用アプリケーションエラー — 例: conversation/provider/agent が見つからない、デプロイ可能なオンライン agent がない。 |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — JWT の欠落または無効。admin token メソッドで bearer token が `ARONA_ADMIN_TOKEN` と一致しない場合（`"Admin access required"`）にも使用されます。 |
-| `-32006` | `QUOTA_ERROR` | JWT ゲートの RPC メソッド（`chat.send`）で月次 billing クォータを超過。 |
-| `-32007` | `ADMIN_REQUIRED` | 認証済みの**非 admin** が admin ゲートのメソッド（`agents.*`、`engine.invoke`）を呼び出した。メッセージにはメソッド固有のヒントが含まれます。 |
+| `-32006` | `QUOTA_ERROR` | JWT ゲートの RPC メソッド（`chat.send`、`realtime.start`）で月次 billing クォータを超過。 |
+| `-32007` | `ADMIN_REQUIRED` | 認証済みの**非 admin** が admin ゲートのメソッド（`agents.*`、`engine.invoke`、`providers.*` の変更）を呼び出した。メッセージにはメソッド固有のヒントが含まれます。 |
 
-> `agents.*` と `engine.invoke` メソッドは admin のみです: アカウントが `users.is_admin = true` を持つ JWT を要求します。認証済みの非 admin は `-32007`（`ADMIN_REQUIRED`）で拒否されます。未認証の呼び出し元は標準の `AUTH_ERROR` を受け取り、サーバーはメソッドが特権的であることを明かしません。
+> `agents.*` と `engine.invoke` と `providers.*` の変更メソッドは admin のみです: アカウントが `users.is_admin = true` を持つ JWT を要求します。認証済みの非 admin は `-32007`（`ADMIN_REQUIRED`）で拒否されます。未認証の呼び出し元は標準の `AUTH_ERROR` を受け取り、サーバーはメソッドが特権的であることを明かしません。
 
 ## 認証の凡例
 
@@ -64,7 +64,7 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 
 | メソッド | 認証 | パラメータ | 説明 |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model`（string）、`config?`（セッション設定オブジェクト）、`conversation_id?`（string） | `model` を提供する backend に対する全二重セッションを開きます。`{ "session_id", "stream_session" }` を返します: `realtime.event` / `realtime.stop` には `session_id` を使用し、`realtime.event` 通知を受け取るには SSE サイドカーの `stream_session` を購読します。 |
+| `realtime.start` | JWT | `model`（string）、`config?`（セッション設定オブジェクト）、`conversation_id?`（string） | `model` を提供する backend に対する全二重セッションを開きます。`{ "session_id", "stream_session" }` を返します: `realtime.event` / `realtime.stop` には `session_id` を使用し、`realtime.event` 通知を受け取るには SSE サイドカーの `stream_session` を購読します。`chat.send` と同様に課金ゲート対象（ユーザー全体の月次クォータ → `-32006`）。 |
 | `realtime.event` | JWT | `session_id`（string）、`event`（クライアントイベント — 音声 append/commit/clear、画像フレーム、response create/cancel、セッション停止） | 開いているセッションに 1 つのクライアントイベントを送信します。upstream backend に転送されます。`{ "ok": true }` を返します。 |
 | `realtime.stop` | JWT | `session_id`（string） | セッションを閉じて削除します。`{ "removed": bool }` を返します。 |
 
@@ -95,11 +95,11 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 
 | メソッド | 認証 | パラメータ | 説明 |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | 既知のproviderを一覧します: 組み込みの公式エントリとカスタムエントリを表示メタデータとして（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。設計上公開されています — リストはクレデンシャルを持たず、以下の変更だけが JWT ゲートです。 |
-| `providers.add` | JWT | `id`、`name`、`description?`、`website_domain?` | カスタムproviderエントリを追加します。`{ "ok": true }` を返します。 |
-| `providers.update` | JWT | `provider_id`、`name?`、`description?`、`website_domain?` | カスタムproviderのフィールドを更新します（指定されたもののみ）。`{ "ok": true }` を返します。 |
-| `providers.remove` | JWT | `provider_id` | カスタムproviderを削除します。`{ "ok": true }` を返します。 |
-| `providers.test` | JWT | — | provider接続をテストします。スタブ: `{ "ok": true, "message": "Provider connection test not yet implemented" }` を返します。 |
+| `providers.list` | **public** | — | 既知のproviderを一覧します: 組み込みの公式エントリとカスタムエントリを表示メタデータとして（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。設計上公開されています — リストはクレデンシャルを持たず、以下の変更だけが admin ゲートです。 |
+| `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | カスタムproviderエントリを追加します。`{ "ok": true }` を返します。 |
+| `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | カスタムproviderのフィールドを更新します（指定されたもののみ）。`{ "ok": true }` を返します。 |
+| `providers.remove` | admin（JWT + is_admin） | `provider_id` | カスタムproviderを削除します。`{ "ok": true }` を返します。 |
+| `providers.test` | admin（JWT + is_admin） | — | provider接続をテストします。スタブ: `{ "ok": true, "message": "Provider connection test not yet implemented" }` を返します。 |
 
 ## Agents
 

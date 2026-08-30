@@ -126,8 +126,9 @@ aber gegen das **Ganz-Benutzer**-Fenster (der Aufruf trägt keinen API-Key).
 Eine Ablehnung ist ein JSON-RPC-Fehler mit dem implementierungsdefinierten Code
 `-32006` (`QUOTA_ERROR`) und derselben Nachricht wie die REST-Quoten-Ablehnung.
 Es gibt kein Pro-Key-Rate-Limit auf dem RPC-Pfad — Rate Limiting ist
-key-bezogen, und RPC-Aufrufe haben keinen Key. Realtime- und Video-**RPC**-
-Methoden sind nicht quoten-gegated.
+key-bezogen, und RPC-Aufrufe haben keinen Key. `realtime.start` durchläuft denselben monatlichen Quoten-Gate auf den
+ganzen Benutzer (ein Sitzungsaufbau mit erschöpftem Quota wird mit `-32006`
+abgelehnt); `video.create` prüft das Quota bei der Job-Erstellung.
 
 ## Fail-open-Abwägung
 
@@ -213,6 +214,6 @@ Quoten-Rechnung und Usage-Ansicht im Umfang immer übereinstimmen.
 
 <!-- src: packages/core/src/billing/mod.rs:452-573 (usage recording & cost), 284-337 (quota/rate-limit gates, fail-open), 421-433 (Retry-After); packages/core/src/migration/mod.rs:233-293 (usage_records schema), 333-339 (tier seed); packages/core/src/gateway/server.rs:492-539 (429 enforcement), 1036-1100/1269-1392 (chat & SSE recording); packages/core/src/gateway/rpc.rs:1075-1175 (usage.list), 1605-1638 (RPC quota gate); packages/core/src/billing/video.rs:20-86 (video pricing) -->
 
-<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: only chat.send is quota-gated on the RPC path (rpc.rs:1605-1638); realtime.start and video.create record usage but apply no quota gate (rpc.rs:1914-1984, 1296-1382). The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
+<!-- note: The fact sheet stated that "chat.send, realtime and video RPCs go through the same quota gates". Verified against source: chat.send and realtime.start are quota-gated on the RPC path against the whole-user monthly window; video.create checks quota at job creation. The REST /v1/video/generations endpoint is gated (server.rs:891-895). This page reflects the verified behavior. -->
 
 <!-- note: Realtime sessions additionally record per-response usage under jwt-<user-uuid> (gateway/realtime.rs:61-84) and video jobs record an explicit cost on completion (gateway/video.rs:230-238, 349-356); the fact sheet's three-channel list was extended with these two attribution paths. -->

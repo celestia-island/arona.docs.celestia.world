@@ -129,7 +129,8 @@ RPM**；pro/enterprise tier 提高上限。月度配额执行共用同一条拒�
 时值得了解：
 
 - **`providers.list` 是公开的**，而 `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` 需要 JWT。公开读路径会暴露 provider
+  `providers.remove` / `providers.test` 受 admin 门控（JWT + `users.is_admin`）。
+  公开读路径会暴露 provider
   目录，但没有任何秘密。
 - **`/ws/agent` 是一个未认证的控制平面**：GPU agent 不带凭据连接并自行注册
   （`register` / `heartbeat` / 命令结果帧）。任何能到达 WebSocket 端口的人

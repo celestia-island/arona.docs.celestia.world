@@ -77,10 +77,10 @@ full catalog in [Events & Notifications](./events.md).
 | `-32603` | Internal error | Unexpected server failure. |
 | `-32000` | `APP_ERROR` | Generic application error — e.g. conversation/provider/agent not found, no online agent available for deploy. |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — missing or invalid JWT. Also used by admin-token methods when the bearer token does not match `ARONA_ADMIN_TOKEN` (`"Admin access required"`). |
-| `-32006` | `QUOTA_ERROR` | Monthly billing quota exceeded for a JWT-gated RPC method (`chat.send`). |
-| `-32007` | `ADMIN_REQUIRED` | Authenticated **non-admin** calling an admin-gated method (`agents.*`, `engine.invoke`); the message includes a method-specific hint. |
+| `-32006` | `QUOTA_ERROR` | Monthly billing quota exceeded for a JWT-gated RPC method (`chat.send`, `realtime.start`). |
+| `-32007` | `ADMIN_REQUIRED` | Authenticated **non-admin** calling an admin-gated method (`agents.*`, `engine.invoke`, `providers.*` mutations); the message includes a method-specific hint. |
 
-> The `agents.*` and `engine.invoke` methods are admin-only: they require a
+> The `agents.*`, `engine.invoke` and provider-mutation methods are admin-only: they require a
 > JWT whose account has `users.is_admin = true`. An authenticated non-admin
 > is rejected with `-32007` (`ADMIN_REQUIRED`); an unauthenticated caller
 > gets the standard `AUTH_ERROR` so the server does not reveal that the
@@ -110,7 +110,7 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string), `ref_id?` (string, ≤ 64 chars) | Open a full-duplex session against the backend serving `model`. Returns `{ "session_id", "stream_session" }`: use `session_id` for `realtime.event` / `realtime.stop`, and subscribe to `stream_session` on the SSE sidecar to receive `realtime.event` notifications. The optional `ref_id` is a usage attribution reference (typically the caller's conversation UUID) recorded on every usage row of the session — with it, rows are written even for zero-token responses (local speech engines report no tokens), queryable via the admin usage query (`POST /api/admin/usage/query`). |
+| `realtime.start` | JWT | `model` (string), `config?` (session config object), `conversation_id?` (string), `ref_id?` (string, ≤ 64 chars) | Open a full-duplex session against the backend serving `model`. Returns `{ "session_id", "stream_session" }`: use `session_id` for `realtime.event` / `realtime.stop`, and subscribe to `stream_session` on the SSE sidecar to receive `realtime.event` notifications. The optional `ref_id` is a usage attribution reference (typically the caller's conversation UUID) recorded on every usage row of the session — with it, rows are written even for zero-token responses (local speech engines report no tokens), queryable via the admin usage query (`POST /api/admin/usage/query`). Billing-gated like `chat.send` (whole-user monthly quota → `-32006`). |
 | `realtime.event` | JWT | `session_id` (string), `event` (client event — audio append/commit/clear, image frame, response create/cancel, session stop) | Send one client event into an open session; it is forwarded to the upstream backend. Returns `{ "ok": true }`. |
 | `realtime.stop` | JWT | `session_id` (string) | Close and remove a session. Returns `{ "removed": bool }`. |
 
@@ -141,11 +141,11 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | List known providers: built-in official entries plus custom ones, as display metadata (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Public by design — the list carries no credentials; only the mutations below are JWT-gated. |
-| `providers.add` | JWT | `id`, `name`, `description?`, `website_domain?` | Add a custom provider entry. Returns `{ "ok": true }`. |
-| `providers.update` | JWT | `provider_id`, `name?`, `description?`, `website_domain?` | Update a custom provider's fields (only the provided ones). Returns `{ "ok": true }`. |
-| `providers.remove` | JWT | `provider_id` | Remove a custom provider. Returns `{ "ok": true }`. |
-| `providers.test` | JWT | — | Test a provider connection. Stub: returns `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
+| `providers.list` | **public** | — | List known providers: built-in official entries plus custom ones, as display metadata (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Public by design — the list carries no credentials; only the mutations below are admin-gated. |
+| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Add a custom provider entry. Returns `{ "ok": true }`. |
+| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Update a custom provider's fields (only the provided ones). Returns `{ "ok": true }`. |
+| `providers.remove` | admin (JWT + is_admin) | `provider_id` | Remove a custom provider. Returns `{ "ok": true }`. |
+| `providers.test` | admin (JWT + is_admin) | — | Test a provider connection. Stub: returns `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
 
 ## Agents
 

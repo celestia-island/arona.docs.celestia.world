@@ -39,10 +39,10 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 | `-32603` | Internal error | 예상치 못한 서버 실패. |
 | `-32000` | `APP_ERROR` | 일반 애플리케이션 오류 — 예: 대화/provider/agent를 찾을 수 없음, 배포할 온라인 agent 없음. |
 | `-32005` | `AUTH_ERROR` | `"Authentication required"` — 누락되거나 잘못된 JWT. Bearer token이 `ARONA_ADMIN_TOKEN`과 일치하지 않을 때 admin-token 메서드에서도 사용됩니다(`"Admin access required"`). |
-| `-32006` | `QUOTA_ERROR` | JWT 게이트 RPC 메서드(`chat.send`)의 월간 billing quota 초과. |
-| `-32007` | `ADMIN_REQUIRED` | Admin 게이트 메서드(`agents.*`, `engine.invoke`)를 호출하는 인증된 **비관리자**. 메시지에 메서드별 힌트가 포함됩니다. |
+| `-32006` | `QUOTA_ERROR` | JWT 게이트 RPC 메서드(`chat.send`, `realtime.start`)의 월간 billing quota 초과. |
+| `-32007` | `ADMIN_REQUIRED` | Admin 게이트 메서드(`agents.*`, `engine.invoke`, `providers.*` 변경)를 호출하는 인증된 **비관리자**. 메시지에 메서드별 힌트가 포함됩니다. |
 
-> `agents.*` 및 `engine.invoke` 메서드는 admin 전용입니다: `users.is_admin = true`인 계정의 JWT가 필요합니다. 인증된 비관리자는 `-32007`(`ADMIN_REQUIRED`)로 거부됩니다. 인증되지 않은 호출자는 표준 `AUTH_ERROR`를 받으므로 서버가 메서드가 특권적임을 드러내지 않습니다.
+> `agents.*`, `engine.invoke` 및 `providers.*` 변경 메서드는 admin 전용입니다: `users.is_admin = true`인 계정의 JWT가 필요합니다. 인증된 비관리자는 `-32007`(`ADMIN_REQUIRED`)로 거부됩니다. 인증되지 않은 호출자는 표준 `AUTH_ERROR`를 받으므로 서버가 메서드가 특권적임을 드러내지 않습니다.
 
 ## 인증 범례
 
@@ -65,7 +65,7 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 
 | 메서드 | Auth | Params | 설명 |
 | --- | --- | --- | --- |
-| `realtime.start` | JWT | `model`(string), `config?`(세션 구성 객체), `conversation_id?`(string) | `model`을 제공하는 backend에 대해 전이중 세션을 엽니다. `{ "session_id", "stream_session" }`을 반환합니다: `realtime.event` / `realtime.stop`에는 `session_id`를 사용하고, SSE 사이드카의 `stream_session`을 구독하여 `realtime.event` 알림을 받습니다. |
+| `realtime.start` | JWT | `model`(string), `config?`(세션 구성 객체), `conversation_id?`(string) | `model`을 제공하는 backend에 대해 전이중 세션을 엽니다. `{ "session_id", "stream_session" }`을 반환합니다: `realtime.event` / `realtime.stop`에는 `session_id`를 사용하고, SSE 사이드카의 `stream_session`을 구독하여 `realtime.event` 알림을 받습니다. `chat.send`와 마찬가지로 빌링 게이트 대상(전체 사용자 월간 quota → `-32006`). |
 | `realtime.event` | JWT | `session_id`(string), `event`(클라이언트 이벤트 — 오디오 append/commit/clear, 이미지 프레임, response create/cancel, session stop) | 열린 세션에 클라이언트 이벤트 하나를 보냅니다. 업스트림 backend로 전달됩니다. `{ "ok": true }`를 반환합니다. |
 | `realtime.stop` | JWT | `session_id`(string) | 세션을 닫고 제거합니다. `{ "removed": bool }`를 반환합니다. |
 
@@ -96,11 +96,11 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 
 | 메서드 | Auth | Params | 설명 |
 | --- | --- | --- | --- |
-| `providers.list` | **public** | — | 알려진 providers를 나열합니다: 내장 공식 항목과 사용자 지정 항목, 표시 메타데이터(`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`)로. 설계상 공개 — 목록은 자격 증명을 담지 않습니다. 아래 변경 메서드만 JWT 게이트입니다. |
-| `providers.add` | JWT | `id`, `name`, `description?`, `website_domain?` | 사용자 지정 provider 항목을 추가합니다. `{ "ok": true }`를 반환합니다. |
-| `providers.update` | JWT | `provider_id`, `name?`, `description?`, `website_domain?` | 사용자 지정 provider의 필드를 업데이트합니다(제공된 것만). `{ "ok": true }`를 반환합니다. |
-| `providers.remove` | JWT | `provider_id` | 사용자 지정 provider를 제거합니다. `{ "ok": true }`를 반환합니다. |
-| `providers.test` | JWT | — | Provider 연결을 테스트합니다. 스텁: `{ "ok": true, "message": "Provider connection test not yet implemented" }`를 반환합니다. |
+| `providers.list` | **public** | — | 알려진 providers를 나열합니다: 내장 공식 항목과 사용자 지정 항목, 표시 메타데이터(`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`)로. 설계상 공개 — 목록은 자격 증명을 담지 않습니다. 아래 변경 메서드만 admin 게이트입니다. |
+| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | 사용자 지정 provider 항목을 추가합니다. `{ "ok": true }`를 반환합니다. |
+| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | 사용자 지정 provider의 필드를 업데이트합니다(제공된 것만). `{ "ok": true }`를 반환합니다. |
+| `providers.remove` | admin (JWT + is_admin) | `provider_id` | 사용자 지정 provider를 제거합니다. `{ "ok": true }`를 반환합니다. |
+| `providers.test` | admin (JWT + is_admin) | — | Provider 연결을 테스트합니다. 스텁: `{ "ok": true, "message": "Provider connection test not yet implemented" }`를 반환합니다. |
 
 ## Agents
 

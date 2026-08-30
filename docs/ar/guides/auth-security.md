@@ -150,7 +150,7 @@ description: "جلسات JWT، ومفاتيح API، والبوابات الإد�
 مثيلًا خارج شبكة موثوقة:
 
 - **`providers.list` عامة**، بينما تتطلب `providers.add` / `providers.update`
-  / `providers.remove` / `providers.test` JWT. يكشف مسار القراءة العام
+  / `providers.remove` / `providers.test` مقيدة بالإدارة (admin، JWT + `users.is_admin`). يكشف مسار القراءة العام
   كتالوج الـ providers لكن لا شيء سريًا.
 - **`/ws/agent` مستوى تحكم غير مُصادَق عليه**: تتصل وكلاء GPU دون أي بيانات
   اعتماد ويسجّلون أنفسهم (أطر `register` / `heartbeat` / command-result).

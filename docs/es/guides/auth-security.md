@@ -164,7 +164,8 @@ vale la pena saberlo cuando exponga una instancia más allá de una red de
 confianza:
 
 - **`providers.list` es público**, mientras que `providers.add` /
-  `providers.update` / `providers.remove` / `providers.test` requieren un JWT.
+  `providers.update` / `providers.remove` / `providers.test` están protegidas por
+  admin (JWT + `users.is_admin`).
   La ruta de lectura pública revela el catálogo de providers pero nada secreto.
 - **`/ws/agent` es un plano de control sin autenticar**: los agentes GPU se
   conectan sin credencial y se auto-registran (frames de `register` / `heartbeat`
