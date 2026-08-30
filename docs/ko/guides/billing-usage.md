@@ -87,6 +87,24 @@ Retry-After: <seconds>
 
 JWT 인증 `chat.send`는 동일한 월간 quota 게이트를 거치지만, **전체 사용자** 윈도우에 대해 적용됩니다(호출에 API key가 없음). 거부는 구현 정의 코드 `-32006`(`QUOTA_ERROR`)와 REST quota 거부와 동일한 메시지를 가진 JSON-RPC 오류입니다. RPC 경로에는 키별 rate limit이 없습니다 — rate limiting은 키 범위이며 RPC 호출에는 키가 없습니다. `realtime.start`는 동일한 전체 사용자 월간 quota 게이트를 통과합니다(quota 소진 상태에서 세션을 열면 `-32006`으로 거부). `video.create`는 작업 생성 시 quota를 검사합니다.
 
+## 포인트 원장(선불, tier를 안전망으로)
+
+그룹과 사용자는 포인트 지갑(`ledger_accounts` — 사용자별 개인 지갑, 그룹별 풀)을
+보유합니다. 정산은 **포인트 우선**입니다: 계량된 각 요청은 차감 계정(그룹 키는
+그룹 풀, 그 외에는 개인 지갑)에서
+`round(cost_usd × POINTS_PER_USD × 멤버 배율)`을 차감하려 시도합니다 — 원자적
+조건부 업데이트라 동시 차감으로 잔액을 초과할 수 없습니다. 지갑이 금액을
+감당하지 못하면 요청은 이전처럼 tier 월간 할당량을 사용합니다(후불, `points =
+NULL`). **둘 다** 소진되면 REST 게이트는 **402 Payment Required**
+(`insufficient_credits` / `payment_required`, `Retry-After`는 월말까지)로
+응답합니다. RPC 경로는 `-32006` `QUOTA_ERROR` 형태를 유지합니다.
+
+`POINTS_PER_USD`는 환경에서 가져옵니다(기본 100 — 1포인트 = 1센트).
+관리 표면: `group.credits.topup`(플랫폼 admin), `group.credits.allocate`
+(그룹 admin, 풀→지갑 원자 전송), `group.credits.balance`, `ledger.self`;
+`billing.plan`은 `points_balance`와 `points_per_usd`를 보고합니다. 원장에서
+정산된 사용량 행에는 `points`와 `account_type`(`user` | `group`)이 표시됩니다.
+
 ## Fail-open 트레이드오프
 
 Billing은 **설계상 최선 노력**입니다. Quota 또는 rate-limit 검사 뒤의 데이터베이스 쿼리가 실패하면 검사는 `Unknown`을 반환하고 요청은 chat을 차단하는 대신 **허용**(로그만)됩니다. 운영자는 429에 의존해 용량을 보호할 수 있지만, 데이터베이스가 unhealthy할 때 이를 확실한 보장으로 취급해서는 안 됩니다 — 문서화된 트레이드오프는 엄격한 계량보다 chat 경로의 가용성입니다.

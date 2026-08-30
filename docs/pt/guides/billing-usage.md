@@ -128,6 +128,27 @@ chamadas RPC não têm chave. `realtime.start` passa pelo mesmo gate de cota men
 (abrir uma sessão com a cota esgotada é rejeitado com `-32006`);
 `video.create` verifica a cota na criação do job.
 
+## Livro-razão de pontos (pré-pago, com o tier como rede de segurança)
+
+Grupos e utilizadores têm carteiras de pontos (`ledger_accounts` — uma
+carteira pessoal por utilizador e um fundo por grupo). A liquidação é
+**pontos primeiro**: cada pedido medido tenta deduzir
+`round(cost_usd × POINTS_PER_USD × multiplicador do membro)` da conta
+debitada (o fundo do grupo para chaves de grupo, caso contrário a carteira
+pessoal) — atualizações atómicas condicionais, deduções concorrentes nunca
+podem exceder o saldo. Quando a carteira não cobre o valor, o pedido usa o
+contingente mensal do tier como antes (pós-pago, `points = NULL`). Quando
+AMBOS estão esgotados, a porta REST responde **402 Payment Required**
+(`insufficient_credits` / `payment_required`, `Retry-After` até ao fim do
+mês); o caminho RPC mantém a forma `-32006` `QUOTA_ERROR`.
+
+`POINTS_PER_USD` vem do ambiente (padrão 100 — um ponto = um cêntimo).
+Superfície de gestão: `group.credits.topup` (admin de plataforma),
+`group.credits.allocate` (admin do grupo, transferência atómica
+fundo→carteira), `group.credits.balance`, `ledger.self`; `billing.plan`
+reporta `points_balance` e `points_per_usd`. As linhas de uso liquidadas
+do livro-razão transportam `points` e `account_type` (`user` | `group`).
+
 ## Tradeoff fail-open
 
 O billing é **best-effort por design**. Se a query de banco por trás de uma

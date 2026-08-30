@@ -81,6 +81,9 @@ Há três gates de admin distintos, cada um com sua própria credencial:
    de billing exigem o mesmo Bearer `ARONA_ADMIN_TOKEN` que as rotas HTTP de
    admin; sem ele, retornam `AUTH_ERROR` "Admin access required".
 
+
+4. **Identidade do plano de gestão (`group.*`, `group.credits.*`, `ledger.self`, `keys.*`, `billing.plan` RPC)** — estes métodos aceitam um JWT de utilizador e, adicionalmente, o mesmo Bearer `ARONA_ADMIN_TOKEN` que as rotas admin: o token atua então como **identidade de serviço do operador** (os claims do admin da instância são sintetizados) para que as ferramentas de consola conduzam o plano multi-inquilino. O token NÃO autoriza deliberadamente o plano de inferência/chat (`chat.send`, `/v1/*`) — é uma credencial de gestão, não de modelos.
+
 O **primeiro usuário registrado vira o admin** (`users.is_admin = true`). Todo
 registro posterior é um usuário comum, e o registro só está aberto enquanto
 `ARONA_REGISTRATION_OPEN` estiver definida com um valor truthy.

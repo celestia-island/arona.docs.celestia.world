@@ -86,6 +86,9 @@ Il y a trois portes admin distinctes, chacune avec son identifiant :
    que les routes HTTP admin ; sans lui, elles renvoient `AUTH_ERROR` « Admin
    access required ».
 
+
+4. **Identité du plan de gestion (`group.*`, `group.credits.*`, `ledger.self`, `keys.*`, `billing.plan` RPC)** — ces méthodes acceptent un JWT utilisateur et, en plus, le même Bearer `ARONA_ADMIN_TOKEN` que les routes admin : le jeton agit alors comme **identité de service de l'opérateur** (les claims de l'admin de l'instance sont synthétisés) pour que les outils de console pilotent le plan multi-tenant. Le jeton n'autorise délibérément PAS le plan d'inférence/chat (`chat.send`, `/v1/*`) — c'est une accréditation de gestion, pas de modèles.
+
 Le **premier utilisateur enregistré devient l'admin** (`users.is_admin = true`).
 Chaque inscription ultérieure est un utilisateur ordinaire, et
 l'inscription n'est ouverte que tant que `ARONA_REGISTRATION_OPEN` est défini

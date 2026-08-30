@@ -87,6 +87,9 @@ Es gibt drei getrennte Admin-Gates, jedes mit eigener Credential:
    Admin-HTTP-Routen; ohne es geben sie `AUTH_ERROR` „Admin access required“
    zurück.
 
+
+4. **Management-Ebene-Identität (`group.*`, `group.credits.*`, `ledger.self`, `keys.*`, `billing.plan`-RPC-Methoden)** — diese Methoden akzeptieren ein Benutzer-JWT und zusätzlich denselben Bearer `ARONA_ADMIN_TOKEN` wie die Admin-Routen: Der Token fungiert dann als **Betreiber-Service-Identität** (die Claims des Instanz-Admins werden synthetisiert), damit Konsolen-Tools die Multi-Tenant-Ebene steuern können. Der Token autorisiert die Inferenz-/Chat-Ebene (`chat.send`, `/v1/*`) bewusst NICHT — er ist eine Verwaltungs-, keine Modell-Berechtigung.
+
 Der **erste registrierte Benutzer wird zum Admin** (`users.is_admin = true`).
 Jede spätere Registrierung ist ein regulärer Benutzer, und die Registrierung
 ist nur offen, solange `ARONA_REGISTRATION_OPEN` auf einen truthy Wert gesetzt

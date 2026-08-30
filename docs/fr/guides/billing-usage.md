@@ -132,6 +132,28 @@ limitation de débit est scopée par key et les appels RPC n'ont pas de key. Les
 l'utilisateur entier (une ouverture de session avec quota épuisé est rejetée
 par `-32006`) ; `video.create` vérifie le quota à la création du job.
 
+## Grand livre de points (prépayé, le tier en filet de sécurité)
+
+Les groupes et les utilisateurs ont des portefeuilles de points
+(`ledger_accounts` — un portefeuille personnel par utilisateur et un pool
+par groupe). Le règlement est **points d'abord** : chaque requête mesurée
+tente de déduire `round(cost_usd × POINTS_PER_USD × multiplicateur du
+membre)` du compte débité (le pool du groupe pour les clés de groupe,
+sinon le portefeuille personnel) — mises à jour atomiques conditionnelles,
+les déductions concurrentes ne peuvent jamais dépasser le solde. Quand le
+portefeuille ne couvre pas le montant, la requête utilise le quota mensuel
+du tier comme avant (postpayé, `points = NULL`). Quand LES DEUX sont
+épuisés, la passerelle REST répond **402 Payment Required**
+(`insufficient_credits` / `payment_required`, `Retry-After` jusqu'à la fin
+du mois) ; le chemin RPC garde la forme `-32006` `QUOTA_ERROR`.
+
+`POINTS_PER_USD` vient de l'environnement (défaut 100 — un point = un
+centime). Surface de gestion : `group.credits.topup` (admin de
+plateforme), `group.credits.allocate` (admin du groupe, transfert atomique
+pool→portefeuille), `group.credits.balance`, `ledger.self` ; `billing.plan`
+rapporte `points_balance` et `points_per_usd`. Les lignes d'usage réglées
+depuis le grand livre portent `points` et `account_type` (`user` | `group`).
+
 ## Compromis fail-open
 
 La facturation est **best-effort par conception**. Si la requête de base de

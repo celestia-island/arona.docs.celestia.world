@@ -67,6 +67,9 @@ API key 是 OpenAI 兼容面的机器凭据：
    要求与 admin HTTP 路由相同的 Bearer `ARONA_ADMIN_TOKEN`；没有它则返回
    `AUTH_ERROR` "Admin access required"。
 
+
+4. **管理面身份（`group.*`、`group.credits.*`、`ledger.self`、`keys.*`、`billing.plan` RPC 方法）** —— 这些方法接受用户 JWT，此外也接受与 admin 路由相同的 Bearer `ARONA_ADMIN_TOKEN`：此时令牌充当**运营者服务身份**（合成实例管理员 claims），供控制台工具驱动多租户面。令牌刻意不授权推理/聊天面（`chat.send`、`/v1/*`）——它是管理凭据，不是模型凭据。
+
 **第一个注册用户成为管理员**（`users.is_admin = true`）。此后的每次注册都是
 普通用户，并且只有在 `ARONA_REGISTRATION_OPEN` 设置为 truthy 值时注册才开放。
 

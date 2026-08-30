@@ -101,6 +101,24 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 
 | الطريقة | المصادقة | المعاملات | الوصف |
 | --- | --- | --- | --- |
+| `group.create` | JWT أو رمز admin | `name`، `description?`، `id?` (uuid، جسر idempotent) | إنشاء مجموعة؛ يصبح المنشئ مالكًا وعضو admin. يعيد المجموعة. |
+| `group.list` | JWT أو رمز admin | — | مجموعات المتصل (id، الاسم، my_role، عدد الأعضاء، علم قائمة السماح). |
+| `group.get` | JWT (عضو) | `group_id` | تفاصيل المجموعة + الأعضاء النشطون. |
+| `group.update` | admin المجموعة / المنصة | `group_id`، `name?`، `description?`، `enforce_model_allowlist?`، `rpm_ceiling?` (null يمسح) | تحديث حقول المجموعة. يعيد المجموعة. |
+| `group.delete` | مالك المجموعة | `group_id` | حذف المجموعة (تنفصل مفاتيح المجموعة، وتُحذف العضويات بشكل متتالٍ). |
+| `group.members.list` | admin المجموعة / المنصة | `group_id` | الأعضاء النشطون مع الدور ومضاعف التكلفة والحالة. |
+| `group.members.add` | admin المجموعة / المنصة | `group_id`، `email`، `role?` (admin\|member)، `cost_multiplier?` | إضافة مستخدم موجود على المنصة (upsert). يعيد العضو. |
+| `group.members.update` | admin المجموعة / المنصة | `group_id`، `user_id` (بريد)، `role?`، `cost_multiplier?`، `is_active?` | تحديث عضو؛ `is_active: false` هو مفتاح الإيقاف الذي يبطل مفاتيح مجموعته فورًا. لا يمكن تعطيل المالك أو إزالته. |
+| `group.members.remove` | admin المجموعة / المنصة | `group_id`، `user_id` (بريد) | إزالة عضو (وليس المالك). |
+| `group.invite.create` | admin المجموعة / المنصة | `group_id`، `role?`، `email?`، `max_uses?`، `ttl_secs?` | إنشاء دعوة؛ يظهر الرمز مرة واحدة فقط. |
+| `group.invite.accept` | JWT | `token` | قبول دعوة؛ الانضمام إلى المجموعة بالدور الممنوح. لاستخدام واحد مع التحقق من الصلاحية والبريد. |
+| `group.models.list` | admin المجموعة / المنصة | `group_id` | صفوف `{ allowed: [...], denied: [...] }` لقائمة سماح المجموعة. |
+| `group.models.allow` | admin المجموعة / المنصة | `group_id`، `model_ids[]` | السماح بالنماذج (صفوف المنع الصريح تتفوق على السماح). |
+| `group.models.deny` | admin المجموعة / المنصة | `group_id`، `model_ids[]` | منع النماذج (المنع له الأولوية). |
+| `group.credits.topup` | admin المنصة | `group_id`، `points`، `note?` | شحن مجمع نقاط المجموعة. يعيد الرصيد الجديد. |
+| `group.credits.balance` | admin المجموعة / المنصة | `group_id` | رصيد المجمع + إدخالات السجل الأخيرة. |
+| `group.credits.allocate` | admin المجموعة / المنصة | `group_id`، `user_id` (بريد)، `points`، `note?` | نقل النقاط ذريًا من مجمع المجموعة إلى محفظة عضو الشخصية (رفض كامل عند نقص المجمع). |
+| `ledger.self` | JWT أو رمز admin | — | محفظة النقاط الشخصية للمتصل: الرصيد + الإدخالات الأخيرة. |
 | `providers.list` | **public** | — | اسرد المزوّدين المعروفين: الإدخالات الرسمية المدمجة إضافة إلى المخصصة، كبيانات تعريفية للعرض (`id`، `name`، `description`، `website_domain`، `is_official`، `is_operator`). عامة عن قصد — لا تحمل القائمة أي بيانات اعتماد؛ فقط التعديلات أدناه مقيدة بالإدارة (admin). |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | أضف إدخال مزوّد مخصصًا. تعيد `{ "ok": true }`. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | حدّث حقول مزوّد مخصص (الحقول المقدَّمة فقط). تعيد `{ "ok": true }`. |

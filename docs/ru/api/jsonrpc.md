@@ -140,6 +140,24 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 
 | Метод | Auth | Params | Описание |
 | --- | --- | --- | --- |
+| `group.create` | JWT или admin-токен | `name`, `description?`, `id?` (uuid, идемпотентный мост) | Создать группу; создатель становится владельцем + admin-участником. Возвращает группу. |
+| `group.list` | JWT или admin-токен | — | Группы вызывающего (id, имя, my_role, число участников, флаг списка разрешений). |
+| `group.get` | JWT (участник) | `group_id` | Детали группы + активные участники. |
+| `group.update` | admin группы / платформа | `group_id`, `name?`, `description?`, `enforce_model_allowlist?`, `rpm_ceiling?` (null очищает) | Обновить поля группы. Возвращает группу. |
+| `group.delete` | владелец группы | `group_id` | Удалить группу (ключи группы отсоединяются, членства удаляются каскадно). |
+| `group.members.list` | admin группы / платформа | `group_id` | Активные участники с ролью, множителем стоимости и состоянием. |
+| `group.members.add` | admin группы / платформа | `group_id`, `email`, `role?` (admin\|member), `cost_multiplier?` | Добавить существующего пользователя платформы (upsert). Возвращает участника. |
+| `group.members.update` | admin группы / платформа | `group_id`, `user_id` (email), `role?`, `cost_multiplier?`, `is_active?` | Обновить участника; `is_active: false` — аварийный выключатель, мгновенно аннулирующий его групповые ключи. Владельца нельзя отключить или удалить. |
+| `group.members.remove` | admin группы / платформа | `group_id`, `user_id` (email) | Удалить участника (не владельца). |
+| `group.invite.create` | admin группы / платформа | `group_id`, `role?`, `email?`, `max_uses?`, `ttl_secs?` | Создать приглашение; токен виден ровно один раз. |
+| `group.invite.accept` | JWT | `token` | Принять приглашение; вступить в группу с предоставленной ролью. Однократное использование, проверка срока и email. |
+| `group.models.list` | admin группы / платформа | `group_id` | Строки `{ allowed: [...], denied: [...] }` списка разрешений группы. |
+| `group.models.allow` | admin группы / платформа | `group_id`, `model_ids[]` | Разрешить модели (явные строки запрета важнее разрешений). |
+| `group.models.deny` | admin группы / платформа | `group_id`, `model_ids[]` | Запретить модели (запрет имеет приоритет). |
+| `group.credits.topup` | admin платформы | `group_id`, `points`, `note?` | Пополнить пул очков группы. Возвращает новый баланс. |
+| `group.credits.balance` | admin группы / платформа | `group_id` | Баланс пула + последние записи реестра. |
+| `group.credits.allocate` | admin группы / платформа | `group_id`, `user_id` (email), `points`, `note?` | Атомарно перевести очки из пула группы в личный кошелёк участника (при нехватке пула — полный отказ). |
+| `ledger.self` | JWT или admin-токен | — | Личный кошелёк очков вызывающего: баланс + последние записи. |
 | `providers.list` | **public** | — | Список известных provider'ов: встроенные официальные записи плюс кастомные, как display-метаданные (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Публичен по дизайну — список не несёт учётных данных; только мутации ниже гейтятся admin. |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Добавить запись кастомного provider'а. Возвращает `{ "ok": true }`. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Обновить поля кастомного provider'а (только переданные). Возвращает `{ "ok": true }`. |

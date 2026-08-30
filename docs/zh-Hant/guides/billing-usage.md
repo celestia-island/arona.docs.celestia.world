@@ -116,6 +116,21 @@ code 為實作定義的 `-32006`（`QUOTA_ERROR`），訊息與 REST quota 拒�
 RPC 路徑沒有 per-key 速率限制——速率限制以 key 為範圍，而 RPC 呼叫沒有
 key。`realtime.start` 經過同樣的整使用者月度 quota 閘門（quota 耗盡時開啟 session 會回傳 `-32006`）；`video.create` 在任務建立時檢查 quota。
 
+## 點數帳本（預付費，tier 兜底）
+
+群組與使用者各有錢包（`ledger_accounts`，使用者一人一個個人錢包、一組一個資金池）。
+結算**點數優先**：每筆計量請求嘗試從劃帳帳戶（群組金鑰劃群組池，否則個人錢包）
+扣除 `round(cost_usd × POINTS_PER_USD × 成員倍率)` —— 原子條件更新，並發扣減
+不可能透支。錢包不足時該請求回落到 tier 月度配額（後付費，列上 `points =
+NULL`）。**兩者都耗盡**時 REST 門以 **402 Payment Required**
+（`insufficient_credits` / `payment_required`，`Retry-After` 至月底）拒絕；
+RPC 路徑保持 `-32006` `QUOTA_ERROR` 形狀。
+
+`POINTS_PER_USD` 來自環境變數（預設 100，即 1 點數 = 1 美分）。管理面：
+`group.credits.topup`（平台 admin）、`group.credits.allocate`（群組 admin，
+群組池→錢包原子劃轉）、`group.credits.balance`、`ledger.self`；`billing.plan`
+回傳 `points_balance` 與 `points_per_usd`。由帳本結算的用量列攜帶
+`points` 與 `account_type`（`user` | `group`）。
 ## Fail-open 取捨
 
 計費**刻意設計為盡力而為**。若 quota 或速率限制檢查背後的資料庫查詢失敗，

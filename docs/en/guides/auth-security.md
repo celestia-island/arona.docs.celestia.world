@@ -79,6 +79,16 @@ There are three distinct admin gates, each with its own credential:
    billing mutations require the same Bearer `ARONA_ADMIN_TOKEN` as the admin
    HTTP routes; without it they return `AUTH_ERROR` "Admin access required".
 
+
+4. **Management-plane identity (`group.*`, `group.credits.*`, `ledger.self`,
+   `keys.*`, `billing.plan` RPC methods)** — these accept a user JWT, and
+   additionally the same Bearer `ARONA_ADMIN_TOKEN` as the admin routes: the
+   token then acts as the **operator service identity** (the instance
+   admin's claims are synthesized) so console tooling can drive the
+   multi-tenant surface. The token deliberately does NOT authorize the
+   inference or chat surface (`chat.send`, `/v1/*`) — it is a management
+   credential, not a model credential.
+
 The **first registered user becomes the admin** (`users.is_admin = true`).
 Every later registration is a regular user, and registration is only open
 while `ARONA_REGISTRATION_OPEN` is set to a truthy value.

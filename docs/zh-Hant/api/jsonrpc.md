@@ -129,6 +129,24 @@ keys）。此圖例背後的完整 auth 模型見
 
 | 方法 | Auth | 參數 | 說明 |
 | --- | --- | --- | --- |
+| `group.create` | JWT 或 admin token | `name`、`description?`、`id?`（uuid，冪等橋接） | 建立使用者群組；建立者成為 owner + admin 成員。回傳群組。 |
+| `group.list` | JWT 或 admin token | — | 呼叫者所屬的群組（id、名稱、my_role、成員數、白名單開關）。 |
+| `group.get` | JWT（成員） | `group_id` | 群組詳情 + 在役成員。 |
+| `group.update` | 群組 admin / 平台 | `group_id`、`name?`、`description?`、`enforce_model_allowlist?`、`rpm_ceiling?`（null 清除） | 更新群組欄位。回傳群組。 |
+| `group.delete` | 群組 owner | `group_id` | 刪除群組（群組金鑰解掛，成員關係級聯）。 |
+| `group.members.list` | 群組 admin / 平台 | `group_id` | 在役成員及其角色、倍率與狀態。 |
+| `group.members.add` | 群組 admin / 平台 | `group_id`、`email`、`role?`（admin\|member）、`cost_multiplier?` | 新增既有平台使用者（upsert）。回傳成員。 |
+| `group.members.update` | 群組 admin / 平台 | `group_id`、`user_id`（郵箱）、`role?`、`cost_multiplier?`、`is_active?` | 更新成員；`is_active: false` 為停用開關，立即吊銷其群組金鑰。owner 不可被停用或移除。 |
+| `group.members.remove` | 群組 admin / 平台 | `group_id`、`user_id`（郵箱） | 移除成員（owner 除外）。 |
+| `group.invite.create` | 群組 admin / 平台 | `group_id`、`role?`、`email?`、`max_uses?`、`ttl_secs?` | 建立邀請；權杖僅顯示一次。 |
+| `group.invite.accept` | JWT | `token` | 接受邀請，以授予的角色入組。單次使用，校驗過期與郵箱綁定。 |
+| `group.models.list` | 群組 admin / 平台 | `group_id` | 群組白名單的 `{ allowed: [...], denied: [...] }` 列。 |
+| `group.models.allow` | 群組 admin / 平台 | `group_id`、`model_ids[]` | 允許模型（明確 deny 列壓倒 allow）。 |
+| `group.models.deny` | 群組 admin / 平台 | `group_id`、`model_ids[]` | 拒絕模型（deny 優先）。 |
+| `group.credits.topup` | 平台 admin | `group_id`、`points`、`note?` | 為群組資金池充值。回傳新餘額。 |
+| `group.credits.balance` | 群組 admin / 平台 | `group_id` | 資金池餘額 + 近期流水。 |
+| `group.credits.allocate` | 群組 admin / 平台 | `group_id`、`user_id`（郵箱）、`points`、`note?` | 原子地將點數從群組池轉入成員個人錢包（池不足整筆拒絕）。 |
+| `ledger.self` | JWT 或 admin token | — | 呼叫者的個人點數錢包：餘額 + 近期流水。 |
 | `providers.list` | **public** | — | 列出已知 providers：內建官方條目加自訂條目，作為顯示 metadata（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。刻意公開——清單不攜帶憑證；只有下面的變更操作是 admin 閘控。 |
 | `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | 新增自訂 provider 條目。回傳 `{ "ok": true }`。 |
 | `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自訂 provider 的欄位（只更新提供的那些）。回傳 `{ "ok": true }`。 |

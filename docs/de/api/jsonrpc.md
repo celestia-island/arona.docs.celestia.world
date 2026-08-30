@@ -145,6 +145,24 @@ hinter dieser Legende finden Sie unter
 
 | Methode | Auth | Parameter | Beschreibung |
 | --- | --- | --- | --- |
+| `group.create` | JWT oder Admin-Token | `name`, `description?`, `id?` (UUID, idempotenter Bridge) | Gruppe erstellen; der Ersteller wird Owner + Admin-Mitglied. Gibt die Gruppe zurück. |
+| `group.list` | JWT oder Admin-Token | — | Gruppen des Aufrufers (id, Name, my_role, Mitgliederzahl, Allowlist-Flag). |
+| `group.get` | JWT (Mitglied) | `group_id` | Gruppendetails + aktive Mitglieder. |
+| `group.update` | Gruppen-Admin / Plattform | `group_id`, `name?`, `description?`, `enforce_model_allowlist?`, `rpm_ceiling?` (null löscht) | Gruppenfelder aktualisieren. Gibt die Gruppe zurück. |
+| `group.delete` | Gruppen-Owner | `group_id` | Gruppe löschen (Gruppenschlüssel lösen sich, Mitgliedschaften kaskadieren). |
+| `group.members.list` | Gruppen-Admin / Plattform | `group_id` | Aktive Mitglieder mit Rolle, Kostenmultiplikator und Status. |
+| `group.members.add` | Gruppen-Admin / Plattform | `group_id`, `email`, `role?` (admin\|member), `cost_multiplier?` | Vorhandenen Plattformnutzer hinzufügen (Upsert). Gibt das Mitglied zurück. |
+| `group.members.update` | Gruppen-Admin / Plattform | `group_id`, `user_id` (E-Mail), `role?`, `cost_multiplier?`, `is_active?` | Mitglied aktualisieren; `is_active: false` ist der Kill-Schalter, der Gruppenschlüssel sofort ungültig macht. Der Owner kann nicht deaktiviert oder entfernt werden. |
+| `group.members.remove` | Gruppen-Admin / Plattform | `group_id`, `user_id` (E-Mail) | Mitglied entfernen (nicht den Owner). |
+| `group.invite.create` | Gruppen-Admin / Plattform | `group_id`, `role?`, `email?`, `max_uses?`, `ttl_secs?` | Einladung erstellen; das Token ist genau einmal sichtbar. |
+| `group.invite.accept` | JWT | `token` | Einladung annehmen; tritt der Gruppe mit der gewährten Rolle bei. Einmalnutzung, Ablauf- und E-Mail-Prüfung. |
+| `group.models.list` | Gruppen-Admin / Plattform | `group_id` | `{ allowed: [...], denied: [...] }` Zeilen der Gruppen-Allowlist. |
+| `group.models.allow` | Gruppen-Admin / Plattform | `group_id`, `model_ids[]` | Modelle erlauben (explizite Deny-Zeilen schlagen Allow). |
+| `group.models.deny` | Gruppen-Admin / Plattform | `group_id`, `model_ids[]` | Modelle ablehnen (Deny übersteuert). |
+| `group.credits.topup` | Plattform-Admin | `group_id`, `points`, `note?` | Gruppen-Punktpool aufladen. Gibt den neuen Saldo zurück. |
+| `group.credits.balance` | Gruppen-Admin / Plattform | `group_id` | Pool-Saldo + letzte Ledger-Einträge. |
+| `group.credits.allocate` | Gruppen-Admin / Plattform | `group_id`, `user_id` (E-Mail), `points`, `note?` | Punkte atomar vom Gruppenpool in die persönliche Wallet eines Mitglieds verschieben (bei leerem Pool ganze Ablehnung). |
+| `ledger.self` | JWT oder Admin-Token | — | Persönliche Punkte-Wallet des Aufrufers: Saldo + letzte Einträge. |
 | `providers.list` | **public** | — | Listet bekannte Provider: integrierte offizielle Einträge plus benutzerdefinierte, als Anzeige-Metadaten (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Bewusst öffentlich — die Liste trägt keine Anmeldedaten; nur die unten stehenden Mutationen sind admin-gesperrt. |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Fügt einen benutzerdefinierten Provider-Eintrag hinzu. Gibt `{ "ok": true }` zurück. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Aktualisiert die Felder eines benutzerdefinierten Providers (nur die angegebenen). Gibt `{ "ok": true }` zurück. |

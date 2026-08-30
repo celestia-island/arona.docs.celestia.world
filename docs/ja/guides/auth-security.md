@@ -39,6 +39,9 @@ API key は OpenAI 互換サーフェス用のマシンクレデンシャルで�
 
 3. **`billing.plan.set` と `billing.video.pricing.set` RPC メソッド** — billing の変更は admin HTTP ルートと同じ Bearer `ARONA_ADMIN_TOKEN` を要求します。これがないと `AUTH_ERROR`「Admin access required」を返します。
 
+
+4. **管理プレーン ID（`group.*`、`group.credits.*`、`ledger.self`、`keys.*`、`billing.plan` RPC メソッド）** — これらのメソッドはユーザー JWT を受け入れ、さらに admin ルートと同じ Bearer `ARONA_ADMIN_TOKEN` も受け入れます。この場合トークンは**オペレーターのサービス ID**（インスタンス admin の claims を合成）として機能し、コンソールツールがマルチテナント面を操作できます。トークンは推論/チャット面（`chat.send`、`/v1/*`）を意図的に認可しません — 管理用の資格情報であり、モデル用の資格情報ではありません。
+
 **最初に登録したユーザーが admin になります**（`users.is_admin = true`）。以降の登録はすべて通常ユーザーで、登録が開放されるのは `ARONA_REGISTRATION_OPEN` が truthy な値に設定されている間だけです。
 
 ## パスワードポリシー

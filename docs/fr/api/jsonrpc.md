@@ -144,6 +144,24 @@ d'auth complet derrière cette légende.
 
 | Méthode | Auth | Params | Description |
 | --- | --- | --- | --- |
+| `group.create` | JWT ou jeton admin | `name`, `description?`, `id?` (uuid, pont idempotent) | Créer un groupe ; le créateur devient propriétaire + membre admin. Renvoie le groupe. |
+| `group.list` | JWT ou jeton admin | — | Groupes de l'appelant (id, nom, my_role, nombre de membres, drapeau de liste autorisée). |
+| `group.get` | JWT (membre) | `group_id` | Détail du groupe + membres actifs. |
+| `group.update` | admin du groupe / plateforme | `group_id`, `name?`, `description?`, `enforce_model_allowlist?`, `rpm_ceiling?` (null efface) | Mettre à jour les champs du groupe. Renvoie le groupe. |
+| `group.delete` | propriétaire du groupe | `group_id` | Supprimer le groupe (les clés du groupe se détachent, les adhésions sont supprimées en cascade). |
+| `group.members.list` | admin du groupe / plateforme | `group_id` | Membres actifs avec rôle, multiplicateur de coût et état. |
+| `group.members.add` | admin du groupe / plateforme | `group_id`, `email`, `role?` (admin\|member), `cost_multiplier?` | Ajouter un utilisateur existant de la plateforme (upsert). Renvoie le membre. |
+| `group.members.update` | admin du groupe / plateforme | `group_id`, `user_id` (e-mail), `role?`, `cost_multiplier?`, `is_active?` | Modifier un membre ; `is_active: false` est l'interrupteur qui invalide immédiatement ses clés de groupe. Le propriétaire ne peut être ni désactivé ni retiré. |
+| `group.members.remove` | admin du groupe / plateforme | `group_id`, `user_id` (e-mail) | Retirer un membre (pas le propriétaire). |
+| `group.invite.create` | admin du groupe / plateforme | `group_id`, `role?`, `email?`, `max_uses?`, `ttl_secs?` | Créer une invitation ; le jeton n'est visible qu'une seule fois. |
+| `group.invite.accept` | JWT | `token` | Accepter une invitation ; rejoint le groupe avec le rôle accordé. À usage unique, avec vérification d'expiration et d'e-mail. |
+| `group.models.list` | admin du groupe / plateforme | `group_id` | Lignes `{ allowed: [...], denied: [...] }` de la liste autorisée du groupe. |
+| `group.models.allow` | admin du groupe / plateforme | `group_id`, `model_ids[]` | Autoriser des modèles (les lignes de refus explicites priment). |
+| `group.models.deny` | admin du groupe / plateforme | `group_id`, `model_ids[]` | Refuser des modèles (le refus prévaut). |
+| `group.credits.topup` | admin de plateforme | `group_id`, `points`, `note?` | Créditer le pool de points du groupe. Renvoie le nouveau solde. |
+| `group.credits.balance` | admin du groupe / plateforme | `group_id` | Solde du pool + écritures récentes du grand livre. |
+| `group.credits.allocate` | admin du groupe / plateforme | `group_id`, `user_id` (e-mail), `points`, `note?` | Déplacer atomiquement des points du pool du groupe vers le portefeuille personnel d'un membre (refus global si le pool est insuffisant). |
+| `ledger.self` | JWT ou jeton admin | — | Portefeuille personnel de points de l'appelant : solde + écritures récentes. |
 | `providers.list` | **public** | — | Liste les providers connus : entrées officielles intégrées plus les entrées personnalisées, comme métadonnées d'affichage (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Public par conception — la liste ne porte aucun identifiant ; seules les mutations ci-dessous sont gardées par admin. |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Ajoute une entrée de provider personnalisée. Renvoie `{ "ok": true }`. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Met à jour les champs d'un provider personnalisé (uniquement ceux fournis). Renvoie `{ "ok": true }`. |

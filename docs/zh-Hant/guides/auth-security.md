@@ -70,6 +70,9 @@ API keys 是 OpenAI 相容介面的機器憑證：
    計費變更需要與管理 HTTP 路由相同的 Bearer `ARONA_ADMIN_TOKEN`；
    沒有它會回傳 `AUTH_ERROR`「Admin access required」。
 
+
+4. **管理面身分（`group.*`、`group.credits.*`、`ledger.self`、`keys.*`、`billing.plan` RPC 方法）** —— 這些方法接受使用者 JWT，此外也接受與 admin 路由相同的 Bearer `ARONA_ADMIN_TOKEN`：此時權杖充當**營運者服務身分**（合成實例管理員 claims），供控制台工具驅動多租戶面。權杖刻意不授權推理/聊天面（`chat.send`、`/v1/*`）——它是管理憑證，不是模型憑證。
+
 **第一個註冊的使用者成為管理員**（`users.is_admin = true`）。
 之後的每次註冊都是一般使用者，且只有當 `ARONA_REGISTRATION_OPEN`
 設為 truthy 值時才開放註冊。

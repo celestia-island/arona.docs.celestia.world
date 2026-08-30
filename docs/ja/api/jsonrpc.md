@@ -95,6 +95,24 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 
 | メソッド | 認証 | パラメータ | 説明 |
 | --- | --- | --- | --- |
+| `group.create` | JWT または admin トークン | `name`、`description?`、`id?`（uuid、冪等ブリッジ） | グループを作成。作成者は owner + admin メンバーになります。グループを返します。 |
+| `group.list` | JWT または admin トークン | — | 呼び出し元が所属するグループ（id、名前、my_role、メンバー数、許可リストフラグ）。 |
+| `group.get` | JWT（メンバー） | `group_id` | グループ詳細 + アクティブなメンバー。 |
+| `group.update` | グループ admin / プラットフォーム | `group_id`、`name?`、`description?`、`enforce_model_allowlist?`、`rpm_ceiling?`（null でクリア） | グループのフィールドを更新。グループを返します。 |
+| `group.delete` | グループ owner | `group_id` | グループを削除（グループキーは切り離され、メンバーシップはカスケード削除）。 |
+| `group.members.list` | グループ admin / プラットフォーム | `group_id` | 役割・コスト倍率・状態を含むアクティブなメンバー。 |
+| `group.members.add` | グループ admin / プラットフォーム | `group_id`、`email`、`role?`（admin\|member）、`cost_multiplier?` | 既存のプラットフォームユーザーを追加（upsert）。メンバーを返します。 |
+| `group.members.update` | グループ admin / プラットフォーム | `group_id`、`user_id`（メール）、`role?`、`cost_multiplier?`、`is_active?` | メンバーを更新。`is_active: false` はそのグループキーを即座に無効化するキルスイッチ。owner は無効化・削除できません。 |
+| `group.members.remove` | グループ admin / プラットフォーム | `group_id`、`user_id`（メール） | メンバーを削除（owner は除く）。 |
+| `group.invite.create` | グループ admin / プラットフォーム | `group_id`、`role?`、`email?`、`max_uses?`、`ttl_secs?` | 招待を作成。トークンは一度だけ表示されます。 |
+| `group.invite.accept` | JWT | `token` | 招待を受け入れ、付与された役割でグループに参加。単回使用、有効期限とメールを検証。 |
+| `group.models.list` | グループ admin / プラットフォーム | `group_id` | グループ許可リストの `{ allowed: [...], denied: [...] }` 行。 |
+| `group.models.allow` | グループ admin / プラットフォーム | `group_id`、`model_ids[]` | モデルを許可（明示的な拒否行が許可に優先）。 |
+| `group.models.deny` | グループ admin / プラットフォーム | `group_id`、`model_ids[]` | モデルを拒否（拒否優先）。 |
+| `group.credits.topup` | プラットフォーム admin | `group_id`、`points`、`note?` | グループのポイントプールに入金。新しい残高を返します。 |
+| `group.credits.balance` | グループ admin / プラットフォーム | `group_id` | プール残高 + 最近の台帳エントリ。 |
+| `group.credits.allocate` | グループ admin / プラットフォーム | `group_id`、`user_id`（メール）、`points`、`note?` | グループプールからメンバーの個人ウォレットへポイントを原子的に移動（プール不足時は全体拒否）。 |
+| `ledger.self` | JWT または admin トークン | — | 呼び出し元の個人ポイントウォレット：残高 + 最近のエントリ。 |
 | `providers.list` | **public** | — | 既知のproviderを一覧します: 組み込みの公式エントリとカスタムエントリを表示メタデータとして（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。設計上公開されています — リストはクレデンシャルを持たず、以下の変更だけが admin ゲートです。 |
 | `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | カスタムproviderエントリを追加します。`{ "ok": true }` を返します。 |
 | `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | カスタムproviderのフィールドを更新します（指定されたもののみ）。`{ "ok": true }` を返します。 |

@@ -40,6 +40,9 @@ API keys는 OpenAI 호환 표면의 머신 자격 증명입니다:
 
 3. **`billing.plan.set` 및 `billing.video.pricing.set` RPC 메서드** — billing 변경은 admin HTTP 라우트와 동일한 Bearer `ARONA_ADMIN_TOKEN`이 필요합니다. 없으면 `AUTH_ERROR` "Admin access required"를 반환합니다.
 
+
+4. **관리 평면 ID(`group.*`, `group.credits.*`, `ledger.self`, `keys.*`, `billing.plan` RPC 메서드)** — 이 메서드들은 사용자 JWT를 허용하며, 추가로 admin 라우트와 동일한 Bearer `ARONA_ADMIN_TOKEN`도 허용합니다. 이때 토큰은 **운영자 서비스 ID**(인스턴스 admin의 claims 합성)로 작동하여 콘솔 도구가 멀티테넌트 평면을 구동할 수 있습니다. 토큰은 추론/채팅 평면(`chat.send`, `/v1/*`)을 의도적으로 승인하지 않습니다 — 관리 자격 증명이지 모델 자격 증명이 아닙니다.
+
 **첫 번째 등록 사용자가 admin이 됩니다**(`users.is_admin = true`). 이후의 모든 등록은 일반 사용자이며, `ARONA_REGISTRATION_OPEN`이 truthy 값으로 설정된 동안에만 가입이 열립니다.
 
 ## 비밀번호 정책

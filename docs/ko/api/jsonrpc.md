@@ -96,6 +96,24 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 
 | 메서드 | Auth | Params | 설명 |
 | --- | --- | --- | --- |
+| `group.create` | JWT 또는 admin 토큰 | `name`, `description?`, `id?`(uuid, 멱등 브리지) | 그룹 생성; 생성자가 owner + admin 멤버가 됩니다. 그룹을 반환합니다. |
+| `group.list` | JWT 또는 admin 토큰 | — | 호출자가 속한 그룹(id, 이름, my_role, 멤버 수, 허용 목록 플래그). |
+| `group.get` | JWT(멤버) | `group_id` | 그룹 상세 + 활성 멤버. |
+| `group.update` | 그룹 admin / 플랫폼 | `group_id`, `name?`, `description?`, `enforce_model_allowlist?`, `rpm_ceiling?`(null은 해제) | 그룹 필드 업데이트. 그룹을 반환합니다. |
+| `group.delete` | 그룹 owner | `group_id` | 그룹 삭제(그룹 키는 분리되고 멤버십은 계단식 삭제). |
+| `group.members.list` | 그룹 admin / 플랫폼 | `group_id` | 역할, 비용 배율, 상태를 포함한 활성 멤버. |
+| `group.members.add` | 그룹 admin / 플랫폼 | `group_id`, `email`, `role?`(admin\|member), `cost_multiplier?` | 기존 플랫폼 사용자 추가(upsert). 멤버를 반환합니다. |
+| `group.members.update` | 그룹 admin / 플랫폼 | `group_id`, `user_id`(이메일), `role?`, `cost_multiplier?`, `is_active?` | 멤버 업데이트; `is_active: false`는 그룹 키를 즉시 무효화하는 킬 스위치. owner는 비활성화하거나 제거할 수 없습니다. |
+| `group.members.remove` | 그룹 admin / 플랫폼 | `group_id`, `user_id`(이메일) | 멤버 제거(owner 제외). |
+| `group.invite.create` | 그룹 admin / 플랫폼 | `group_id`, `role?`, `email?`, `max_uses?`, `ttl_secs?` | 초대 생성; 토큰은 정확히 한 번만 표시됩니다. |
+| `group.invite.accept` | JWT | `token` | 초대 수락; 부여된 역할로 그룹에 가입. 일회용, 만료 및 이메일 확인. |
+| `group.models.list` | 그룹 admin / 플랫폼 | `group_id` | 그룹 허용 목록의 `{ allowed: [...], denied: [...] }` 행. |
+| `group.models.allow` | 그룹 admin / 플랫폼 | `group_id`, `model_ids[]` | 모델 허용(명시적 거부 행이 허용보다 우선). |
+| `group.models.deny` | 그룹 admin / 플랫폼 | `group_id`, `model_ids[]` | 모델 거부(거부 우선). |
+| `group.credits.topup` | 플랫폼 admin | `group_id`, `points`, `note?` | 그룹 포인트 풀 충전. 새 잔액을 반환합니다. |
+| `group.credits.balance` | 그룹 admin / 플랫폼 | `group_id` | 풀 잔액 + 최근 원장 항목. |
+| `group.credits.allocate` | 그룹 admin / 플랫폼 | `group_id`, `user_id`(이메일), `points`, `note?` | 그룹 풀에서 멤버 개인 지갑으로 포인트를 원자적으로 이동(풀 부족 시 전체 거부). |
+| `ledger.self` | JWT 또는 admin 토큰 | — | 호출자의 개인 포인트 지갑: 잔액 + 최근 항목. |
 | `providers.list` | **public** | — | 알려진 providers를 나열합니다: 내장 공식 항목과 사용자 지정 항목, 표시 메타데이터(`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`)로. 설계상 공개 — 목록은 자격 증명을 담지 않습니다. 아래 변경 메서드만 admin 게이트입니다. |
 | `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | 사용자 지정 provider 항목을 추가합니다. `{ "ok": true }`를 반환합니다. |
 | `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | 사용자 지정 provider의 필드를 업데이트합니다(제공된 것만). `{ "ok": true }`를 반환합니다. |

@@ -131,6 +131,29 @@ por clave y las llamadas RPC no tienen clave. `realtime.start` pasa por la misma
 usuario (abrir una sesión con la cuota agotada se rechaza con `-32006`);
 `video.create` comprueba la cuota al crear el job.
 
+## Libro mayor de puntos (prepago, con el tier como respaldo)
+
+Los grupos y los usuarios tienen monederos de puntos (`ledger_accounts` —
+un monedero personal por usuario y un fondo por grupo). La liquidación es
+**primero puntos**: cada solicitud medida intenta deducir
+`round(cost_usd × POINTS_PER_USD × multiplicador del miembro)` de la
+cuenta correspondiente (el fondo del grupo para claves de grupo, si no el
+monedero personal) — actualizaciones atómicas condicionales, las
+deducciones concurrentes nunca pueden sobregirar. Cuando el monedero no
+cubre el importe, la solicitud usa el cupo mensual del tier como antes
+(pospago, `points = NULL`). Cuando AMBOS están agotados, la puerta REST
+responde **402 Payment Required** (`insufficient_credits` /
+`payment_required`, `Retry-After` hasta fin de mes); la ruta RPC mantiene
+la forma `-32006` `QUOTA_ERROR`.
+
+`POINTS_PER_USD` viene del entorno (por defecto 100 — un punto = un
+céntimo). Superficie de gestión: `group.credits.topup` (admin de
+plataforma), `group.credits.allocate` (admin del grupo, transferencia
+atómica fondo→monedero), `group.credits.balance`, `ledger.self`;
+`billing.plan` informa `points_balance` y `points_per_usd`. Las filas de
+uso liquidadas desde el libro mayor llevan `points` y `account_type`
+(`user` | `group`).
+
 ## Compensación fail-open
 
 El billing es **de mejor esfuerzo por diseño**. Si la consulta de base de datos

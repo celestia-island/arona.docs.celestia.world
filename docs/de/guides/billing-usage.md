@@ -130,6 +130,28 @@ key-bezogen, und RPC-Aufrufe haben keinen Key. `realtime.start` durchläuft dens
 ganzen Benutzer (ein Sitzungsaufbau mit erschöpftem Quota wird mit `-32006`
 abgelehnt); `video.create` prüft das Quota bei der Job-Erstellung.
 
+## Punkte-Ledger (prepaid, Tier als Backstop)
+
+Gruppen und Benutzer besitzen Punkt-Wallets (`ledger_accounts` — eine
+persönliche Wallet pro Benutzer, ein Pool pro Gruppe). Die Abrechnung ist
+**Punkte-zuerst**: jede gemessene Anfrage versucht
+`round(cost_usd × POINTS_PER_USD × Mitglieds-Multiplikator)` vom
+belastenden Konto abzuziehen (Gruppenpool bei Gruppenschlüsseln, sonst die
+persönliche Wallet) — atomare bedingte Updates, gleichzeitige Abzüge
+können nie überziehen. Kann die Wallet den Betrag nicht decken, läuft die
+Anfrage wie bisher über das monatliche Tier-Kontingent (postpaid,
+`points = NULL`). Sind BEIDE erschöpft, antwortet das REST-Gate mit
+**402 Payment Required** (`insufficient_credits` / `payment_required`,
+`Retry-After` bis Monatsende); der RPC-Pfad behält die `-32006`
+`QUOTA_ERROR`-Form.
+
+`POINTS_PER_USD` kommt aus der Umgebung (Standard 100 — ein Punkt = ein
+Cent). Verwaltung: `group.credits.topup` (Plattform-Admin),
+`group.credits.allocate` (Gruppen-Admin, atomarer Pool→Wallet-Transfer),
+`group.credits.balance`, `ledger.self`; `billing.plan` meldet
+`points_balance` und `points_per_usd`. Aus dem Ledger abgerechnete
+Usage-Zeilen tragen `points` und `account_type` (`user` | `group`).
+
 ## Fail-open-Abwägung
 
 Billing ist **von Design her best-effort**. Wenn die Datenbankabfrage hinter
