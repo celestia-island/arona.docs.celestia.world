@@ -21,12 +21,13 @@ OpenAI SDK, направленный на базовый URL, работает �
 | `POST` | `/v1/chat/completions` | Ход чата, streaming или non-streaming. |
 | `POST` | `/v1/embeddings` | Векторы embeddings для одного или многих входов. |
 | `GET` | `/v1/models` | Модели роутера, объединённые с быстрыми стартовыми моделями. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Отправить асинхронную задачу генерации видео. |
 | `GET` | `/v1/video/generations/{id}` | Опросить статус / результат видео-задачи. |
 
-`/api/health`, `/healthz` и `/readyz` — дополнительные readiness-пробы
-(алиасы `/v1/health` в стиле Kubernetes).
+`/api/health`, `/healthz` и `/readyz` — дополнительные readiness-пробы, которые
+отдают **тот же** plana `HealthResponse` payload, что и `/v1/health` — четыре
+маршрута взаимозаменяемы, а не просто одноимённые алиасы.
 
 ## Authentication
 

@@ -35,7 +35,7 @@ un objeto JSON-RPC 2.0 con `jsonrpc: "2.0"`, una cadena `method`, un objeto
   orden.
 - **Acceso anónimo** — por WebSocket sin JWT, los métodos públicos
   (`auth.register`/`auth.login`/`auth.refresh`, `providers.list`,
-  `system.status`) siguen siendo invocables, y `system.probe` se responde con un
+  `system.status`, `Service.Info`) siguen siendo invocables, y `system.probe` se responde con un
   único ack antes de que el socket se cierre. Todos los demás métodos requieren
   un JWT válido; los métodos protegidos por admin además requieren una cuenta de
   admin (consulte la leyenda más abajo). Los sockets anónimos también están
@@ -242,7 +242,8 @@ en el canal de sesión.
 
 | Método | Auth | Params | Descripción |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Estado agregado del gateway: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Estado agregado del gateway: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — las cuatro últimas son el informe de versión compartido, añadidas sin cambiar ninguna clave existente. |
+| `Service.Info` | public | — | El `VersionReport` que informa cada ruta de salud: `version`, `build_hash`, `kind` y un `engine_version` opcional que arona omite. |
 | `system.probe` | anónimo (solo WS) | — | Probe de liveness de un solo disparo por el transporte WebSocket. El servidor hace ack de `{ "ok": true, "status": "ok" }` y luego cierra el socket — los visitantes anónimos nunca mantienen una conexión abierta. Cualquier otro método en un socket sin autenticar se rechaza con `AUTH_ERROR`. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

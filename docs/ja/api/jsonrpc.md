@@ -14,7 +14,7 @@ Arona は管理プレーン用に `/api/rpc` で JSON-RPC 2.0 サーフェスを
 - **HTTP POST `/api/rpc`** — リクエスト / レスポンス。`Content-Type: application/json` を送信します。JWT は `Authorization: Bearer <jwt>` ヘッダーで送信します。リクエストボディは 1 MiB に制限されます。
 - **WebSocket `GET /api/rpc`** — 長寿命接続。ブラウザーは WebSocket アップグレードでカスタムヘッダーを設定できないため、JWT は `?token=<jwt>` クエリパラメータで送信され、サーバーは内部で `Authorization: Bearer` ヘッダーに畳み込みます（`packages/core/src/gateway/server.rs` を参照）。認証済みソケットは無期限に接続したままでいられます。
 - **バッチリクエスト** — JSON 配列である POST ボディは要素ごとに実行され、同じ順序のレスポンスの JSON 配列で応答されます。
-- **匿名アクセス** — JWT なしの WebSocket では、公開メソッド（`auth.register`/`auth.login`/`auth.refresh`、`providers.list`、`system.status`）は呼び出し可能なままで、`system.probe` はソケットが閉じる前に単一の ack で応答されます。他のすべてのメソッドは有効な JWT を要求します。admin ゲートのメソッドはさらに admin アカウントを要求します（下の凡例を参照）。匿名ソケットは 10 秒のアイドルタイムアウトにも拘束されます。
+- **匿名アクセス** — JWT なしの WebSocket では、公開メソッド（`auth.register`/`auth.login`/`auth.refresh`、`providers.list`、`system.status`、`Service.Info`）は呼び出し可能なままで、`system.probe` はソケットが閉じる前に単一の ack で応答されます。他のすべてのメソッドは有効な JWT を要求します。admin ゲートのメソッドはさらに admin アカウントを要求します（下の凡例を参照）。匿名ソケットは 10 秒のアイドルタイムアウトにも拘束されます。
 - **セッションアタッチメント** — `POST /api/rpc` の `x-session-id` ヘッダーは、RPC レスポンス自体もストリーミング通知と並んでそのセッションチャネルにプッシュします。
 
 ## Id
@@ -184,7 +184,8 @@ Tier、クォータ、usage の会計は[Billing & Usage](../guides/billing-usag
 
 | メソッド | 認証 | パラメータ | 説明 |
 | --- | --- | --- | --- |
-| `system.status` | public | — | 集約された gateway ステータス: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`。 |
+| `system.status` | public | — | 集約された gateway ステータス: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — 最後の 4 つは共有バージョンレポートで、既存のキーを変えずに追加されています。 |
+| `Service.Info` | public | — | すべてのヘルスルートが報告する `VersionReport`: `version`、`build_hash`、`kind`、および arona が省略する任意の `engine_version`。 |
 | `system.probe` | anonymous（WS のみ） | — | WebSocket トランスポート上のワンショット liveness プローブ。サーバーは `{ "ok": true, "status": "ok" }` で ack してからソケットを閉じます — 匿名の訪問者は開いた接続を保持しません。未認証ソケット上の他のメソッドは `AUTH_ERROR` で拒否されます。 |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

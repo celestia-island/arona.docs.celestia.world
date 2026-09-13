@@ -23,12 +23,13 @@ Todos os corpos de requisição e resposta são JSON. Erros usam um shape unifor
 | `POST` | `/v1/chat/completions` | Rodada de chat, streaming ou não-streaming. |
 | `POST` | `/v1/embeddings` | Vetores de embedding para uma ou muitas entradas. |
 | `GET` | `/v1/models` | Modelos do router mesclados com modelos quick-start. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | `HealthResponse` do plana: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Submete uma task assíncrona de geração de vídeo. |
 | `GET` | `/v1/video/generations/{id}` | Faz poll do status / resultado de uma task de vídeo. |
 
-`/api/health`, `/healthz` e `/readyz` são probes adicionais de readiness
-(aliases estilo Kubernetes de `/v1/health`).
+`/api/health`, `/healthz` e `/readyz` são probes adicionais de readiness que
+servem o **mesmo** payload `HealthResponse` do plana que `/v1/health` — as quatro
+rotas são intercambiáveis, não apenas aliases de nome.
 
 ## Autenticação
 

@@ -33,8 +33,8 @@ an optional `params` object and an optional `id`.
   by element and answered with a JSON array of responses in the same order.
 - **Anonymous access** — over WebSocket without a JWT, the public methods
   (`auth.register`/`auth.login`/`auth.refresh`, `providers.list`,
-  `system.status`) remain callable, and `system.probe` is answered with a
-  single ack before the socket closes. Every other method requires a valid
+  `system.status`, `Service.Info`) remain callable, and `system.probe` is
+  answered with a single ack before the socket closes. Every other method requires a valid
   JWT; the admin-gated methods additionally require an admin account (see
   the legend below). Anonymous sockets are also bound by a 10-second idle
   timeout.
@@ -240,7 +240,8 @@ channel.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Aggregate gateway status: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Aggregate gateway status: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — the last four are the shared version report, added without changing any existing key. |
+| `Service.Info` | public | — | The `VersionReport` every health route reports: `version`, `build_hash`, `kind` and an optional `engine_version` that arona omits. |
 | `system.probe` | anonymous (WS only) | — | One-shot liveness probe over the WebSocket transport. The server acks `{ "ok": true, "status": "ok" }` and then closes the socket — anonymous visitors never hold an open connection. Any other method on an unauthenticated socket is rejected with `AUTH_ERROR`. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

@@ -205,17 +205,18 @@ Operational consequences:
 
 ## Health probes
 
-The server exposes two unauthenticated health families (both also covered
-in the [operations guide](./operations.md)):
+The server exposes one unauthenticated health payload on four routes (also
+covered in the [operations guide](./operations.md)):
 
-- `GET /healthz`, `GET /readyz` (aliases) and `GET /v1/health` return
-  `200` with `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` returns the plana `HealthResponse` shape: `status`,
-  `version`, `kind`, `uptime` (seconds), `network`, `build_hash` and
-  `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health` and `GET /api/health` all
+  return `200` with the same plana `HealthResponse`: `status`, `version`,
+  `kind`, `uptime` (seconds), `network`, `build_hash` and `engine_version`.
+- `kind` reports the build profile (`dev` for a debug build, `prod`
+  otherwise) and `build_hash` is the short git revision the binary was built
+  from, so the same fields identify the running artifact on every route.
 
 Point load balancers, supervisors and container healthchecks at
-`/readyz`; use `/api/health` when you need uptime and network detail.
+`/readyz`; `/api/health` serves the same payload, not a richer one.
 
 ## Upgrade and backup
 

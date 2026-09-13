@@ -23,12 +23,14 @@ texte simple (voir [Authentication](#authentication)).
 | `POST` | `/v1/chat/completions` | Tour de chat, streaming ou non-streaming. |
 | `POST` | `/v1/embeddings` | Vecteurs d'embedding pour une ou plusieurs entrées. |
 | `GET` | `/v1/models` | Modèles du routeur fusionnés avec les modèles de démarrage rapide. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | `HealthResponse` de plana : `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Soumettre une tâche asynchrone de génération vidéo. |
 | `GET` | `/v1/video/generations/{id}` | Sonder le statut / résultat d'une tâche vidéo. |
 
 `/api/health`, `/healthz` et `/readyz` sont des sondes de préparation
-supplémentaires (alias de style Kubernetes de `/v1/health`).
+supplémentaires qui servent la **même** charge `HealthResponse` de plana que
+`/v1/health` — les quatre routes sont interchangeables, pas seulement des alias
+de nom.
 
 ## Authentification
 

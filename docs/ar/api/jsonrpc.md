@@ -16,7 +16,7 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
   يبلغ الحد الأقصى لجسم الطلب 1 ميجابايت.
 - **WebSocket `GET /api/rpc`** — اتصال طويل العمر. لا تستطيع المتصفحات ضبط ترويسات مخصصة عند ترقية WebSocket، لذلك ينتقل JWT كمعامل استعلام `?token=<jwt>`؛ يدمجه الخادم في ترويسة `Authorization: Bearer` داخليًا (انظر `packages/core/src/gateway/server.rs`). يمكن للمقابس المصادَق عليها أن تبقى متصلة إلى أجل غير مسمى.
 - **الطلبات المجمّعة (batch)** — يُنفَّذ جسم POST الذي يكون مصفوفة JSON عنصرًا عنصرًا ويُجاب عنه بمصفوفة JSON من الاستجابات بنفس الترتيب.
-- **الوصول المجهول** — عبر WebSocket دون JWT، تبقى الطرق العامة (`auth.register`/`auth.login`/`auth.refresh`، `providers.list`، `system.status`) قابلة للاستدعاء، ويُجاب عن `system.probe` بإقرار واحد (ack) قبل إغلاق المقبس. تتطلب كل طريقة أخرى JWT صالحًا؛ وتتطلب الطرق المقيدة بالإدارة إضافةً إلى ذلك حساب إدارة (انظر الدليل أدناه). كما تخضع المقابس المجهولة لمهلة خمول 10 ثوانٍ.
+- **الوصول المجهول** — عبر WebSocket دون JWT، تبقى الطرق العامة (`auth.register`/`auth.login`/`auth.refresh`، `providers.list`، `system.status`، `Service.Info`) قابلة للاستدعاء، ويُجاب عن `system.probe` بإقرار واحد (ack) قبل إغلاق المقبس. تتطلب كل طريقة أخرى JWT صالحًا؛ وتتطلب الطرق المقيدة بالإدارة إضافةً إلى ذلك حساب إدارة (انظر الدليل أدناه). كما تخضع المقابس المجهولة لمهلة خمول 10 ثوانٍ.
 - **إرفاق الجلسة** — ترويسة `x-session-id` في `POST /api/rpc` تدفع أيضًا استجابة RPC نفسها إلى قناة تلك الجلسة، إلى جانب إشعارات البث.
 
 ## المعرفات (Ids)
@@ -192,7 +192,8 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 
 | الطريقة | المصادقة | المعاملات | الوصف |
 | --- | --- | --- | --- |
-| `system.status` | public | — | حالة gateway الكلية: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | حالة gateway الكلية: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — المفاتيح الأربعة الأخيرة هي تقرير الإصدار المشترك، مُضافة دون تغيير أي مفتاح قائم. |
+| `Service.Info` | public | — | تقرير `VersionReport` الذي تبلّغه كل مسارات الصحة: `version` و`build_hash` و`kind` و`engine_version` اختياري تحذفه arona. |
 | `system.probe` | anonymous (WS only) | — | فحص بقاء لمرة واحدة عبر نقل WebSocket. يقرّ الخادم بـ `{ "ok": true, "status": "ok" }` ثم يغلق المقبس — لا يحتفظ الزوار المجهولون باتصال مفتوح أبدًا. تُرفض أي طريقة أخرى على مقبس غير مصادَق بـ `AUTH_ERROR`. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

@@ -209,17 +209,19 @@ Consecuencias operativas:
 
 ## Probes de salud
 
-El servidor expone dos familias de endpoints de salud sin autenticación (ambas
-también se tratan en la [guía de operaciones](./operations.md)):
+El servidor expone una única carga de salud sin autenticación en cuatro rutas
+(que también se trata en la [guía de operaciones](./operations.md)):
 
-- `GET /healthz`, `GET /readyz` (alias) y `GET /v1/health` devuelven `200` con
-  `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` devuelve la forma `HealthResponse` de plana: `status`,
-  `version`, `kind`, `uptime` (segundos), `network`, `build_hash` y
-  `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health` y `GET /api/health` devuelven
+  todos `200` con el mismo `HealthResponse` de plana: `status`, `version`,
+  `kind`, `uptime` (segundos), `network`, `build_hash` y `engine_version`.
+- `kind` informa del perfil de compilación (`dev` para una compilación debug,
+  `prod` en caso contrario) y `build_hash` es la revisión corta de git con la
+  que se compiló el binario, así que los mismos campos identifican el artefacto
+  en ejecución en cada ruta.
 
 Apunte los load balancers, supervisores y healthchecks de contenedores a
-`/readyz`; use `/api/health` cuando necesite el detalle de uptime y red.
+`/readyz`; `/api/health` sirve la misma carga, no una más rica.
 
 ## Actualización y copia de seguridad
 

@@ -9,15 +9,15 @@ description: "稼働中の arona-server のヘルスエンドポイント、RUST
 
 ## ヘルスマトリクス
 
-3 つのヘルスエンドポイントはすべて認証不要で、プロセスが提供中であれば常に `200 OK` を返します — liveness / readiness の区別はありません:
+4 つのヘルスエンドポイントはすべて認証不要で、プロセスが提供中であれば常に `200 OK` を返します — liveness / readiness の区別はありません:
 
 | エンドポイント | レスポンス |
 | --- | --- |
-| `/healthz`、`/readyz` | `200` `{"status":"ok","version":<CARGO_PKG_VERSION>,"build_hash":<BUILD_HASH>,"models":<n>,"providers":<n>}` |
-| `/v1/health` | 上と同じ詳細ボディ |
-| `/api/health` | plana `HealthResponse`: `status`、`version`（`CARGO_PKG_VERSION`）、`kind`（`Dev`）、`uptime`（秒）、`network`（transport / region / asn）、`build_hash`（`BUILD_HASH`）、`engine_version`（`"0.1.0"`） |
+| `/healthz`、`/readyz` | `200` plana `HealthResponse` — 下記のフィールド一覧で、どのルートでも同一 |
+| `/v1/health` | 同じ plana `HealthResponse` ボディ |
+| `/api/health` | 同じ plana `HealthResponse` ボディ |
 
-`/healthz` と `/readyz` は同じハンドラーのエイリアスで、`/v1/health` もそれを共有するため、Kubernetes スタイルのプローブと OpenAI 互換のヘルスルートは互換です。`/api/health` は uptime、network、エンジンバージョンを追加します。ロードバランサーとスーパーバイザーには `/readyz` を、よりリッチなペイロードが必要な場合は `/api/health` を使用してください。
+これらのルートはすべて同じ plana `HealthResponse` を提供します: `status`、`version`（`CARGO_PKG_VERSION`）、`kind`、`uptime`（秒）、`network`（transport / region / asn）、`build_hash`、`engine_version`。`/healthz` と `/readyz` は同じハンドラーのエイリアスで、`/v1/health` と `/api/health` もそれを共有するため、Kubernetes スタイルのプローブと OpenAI 互換のヘルスルートは真に互換です。`kind` はビルドプロファイルに従い（デバッグビルドなら `dev`、それ以外は `prod`）、`build_hash` はバイナリのビルド元である短い git リビジョン、`engine_version` は `null` です — arona は外部モデルサーバーをスケジュールするのであり、正直にバージョンを報告できる自前のエンジンを持ちません。ロードバランサーとスーパーバイザーには `/readyz` を使用してください。
 
 ## ロギング
 
@@ -77,7 +77,7 @@ External プローブは `GET {base}/v1/models`（パスプレフィックス付
 
 ### バージョン報告
 
-ヘルスボディの `version` は `CARGO_PKG_VERSION` です。`build_hash` は `packages/core/build.rs` が出力するビルド時の `BUILD_HASH` 値です。ノード間で `build_hash` を比較して、すべてが同じアーティファクトを実行していることを確認してください。
+ヘルスボディの `version` は `CARGO_PKG_VERSION` です。`build_hash` は plana の共有 build-info crate がビルド時に取り込む短い git リビジョン（`plana_build_info::emit_build_hash`、`packages/core/build.rs` から呼び出されます）で、ソースが変わったときにだけ変化します — 未コミットの変更があるツリーでは接尾辞 `-dirty` が付き、ソースに git メタデータがない場合は `unknown` になります。`kind` はビルドプロファイルに従います（デバッグビルドなら `dev`、それ以外は `prod`）。ノード間で `build_hash` を比較して、すべてが同じアーティファクトを実行していることを確認してください。
 
-<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's HealthResponse (plana packages/protocol-core/src/http.rs:84-92). -->
-<!-- src: packages/core/src/gateway/server.rs:1197-1246,1507-1539 -->
+<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->

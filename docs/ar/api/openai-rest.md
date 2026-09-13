@@ -16,11 +16,11 @@ description: "مرجع /v1/* بأسلوب OpenAI — إكمال المحادثة
 | `POST` | `/v1/chat/completions` | جولة دردشة، مع البث أو بدونه. |
 | `POST` | `/v1/embeddings` | متجهات التضمين لمدخل واحد أو عدة مدخلات. |
 | `GET` | `/v1/models` | نماذج الموجّه (router) مدمجة مع نماذج البدء السريع. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | إرسال مهمة توليد فيديو غير متزامنة. |
 | `GET` | `/v1/video/generations/{id}` | استطلاع حالة/نتيجة مهمة فيديو. |
 
-تُعد `/api/health` و `/healthz` و `/readyz` فحوص جاهزية إضافية (أسماء بديلة بأسلوب Kubernetes لـ `/v1/health`).
+تُعد `/api/health` و `/healthz` و `/readyz` فحوص جاهزية إضافية تقدّم **نفس** حمولة plana `HealthResponse` التي يقدّمها `/v1/health` — فالمسارات الأربعة قابلة للتبادل، وليست مجرد أسماء بديلة.
 
 ## المصادقة
 

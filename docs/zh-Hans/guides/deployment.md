@@ -187,16 +187,17 @@ docker compose up -d
 
 ## 健康探测
 
-服务器暴露两个无需认证的健康系列（[运维指南](./operations.md) 中也有介绍）：
+服务器在四个路由上暴露同一份无需认证的健康负载（[运维指南](./operations.md) 中也有介绍）：
 
-- `GET /healthz`、`GET /readyz`（别名）和 `GET /v1/health` 返回
-  `200` 及 `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`。
-- `GET /api/health` 返回 plana 的 `HealthResponse` 结构：`status`、
-  `version`、`kind`、`uptime`（秒）、`network`、`build_hash` 和
-  `engine_version`。
+- `GET /healthz`、`GET /readyz`、`GET /v1/health` 和 `GET /api/health` 都返回
+  `200` 及同一份 plana `HealthResponse`：`status`、`version`、`kind`、
+  `uptime`（秒）、`network`、`build_hash` 和 `engine_version`。
+- `kind` 上报构建 profile（debug 构建为 `dev`，否则为 `prod`），`build_hash`
+  是构建该二进制时的短 git 修订号，因此同样的字段在每个路由上都能标识正在
+  运行的产物。
 
-将负载均衡器、守护进程和容器 healthcheck 指向 `/readyz`；需要 uptime 和网络
-详情时使用 `/api/health`。
+将负载均衡器、守护进程和容器 healthcheck 指向 `/readyz`；`/api/health` 提供
+的是同一份负载，而不是更丰富的那份。
 
 ## 升级与备份
 

@@ -16,11 +16,11 @@ Arona는 LLM chat, embeddings, 모델 목록, health probing, 비동기 비디�
 | `POST` | `/v1/chat/completions` | Chat 턴, 스트리밍 또는 비스트리밍. |
 | `POST` | `/v1/embeddings` | 하나 또는 여러 입력에 대한 embedding 벡터. |
 | `GET` | `/v1/models` | Quick-start 모델과 병합된 라우터 모델. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | 비동기 비디오 생성 작업 제출. |
 | `GET` | `/v1/video/generations/{id}` | Video 작업의 상태 / 결과 폴링. |
 
-`/api/health`, `/healthz`, `/readyz`는 추가 readiness probe입니다(`/v1/health`의 Kubernetes 스타일 별칭).
+`/api/health`, `/healthz`, `/readyz`는 `/v1/health`와 **같은** plana `HealthResponse` 페이로드를 제공하는 추가 readiness probe입니다 — 네 라우트는 상호 교환 가능하며, 단순한 이름 별칭이 아닙니다.
 
 ## 인증
 

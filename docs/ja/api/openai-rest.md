@@ -16,11 +16,11 @@ Arona は LLM チャット、embeddings、モデル一覧、ヘルスプロー�
 | `POST` | `/v1/chat/completions` | チャットターン。ストリーミングまたは非ストリーミング。 |
 | `POST` | `/v1/embeddings` | 1 つまたは多数の入力の埋め込みベクトル。 |
 | `GET` | `/v1/models` | ルーターモデルとクイックスタートモデルをマージした一覧。 |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`。 |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`。 |
 | `POST` | `/v1/video/generations` | 非同期ビデオ生成タスクを送信。 |
 | `GET` | `/v1/video/generations/{id}` | ビデオタスクのステータス / 結果をポーリング。 |
 
-`/api/health`、`/healthz`、`/readyz` は追加の readiness プローブです（`/v1/health` の Kubernetes スタイルエイリアス）。
+`/api/health`、`/healthz`、`/readyz` は追加の readiness プローブで、`/v1/health` と**同じ** plana `HealthResponse` ペイロードを提供します — 4 つのルートは互換であり、単なる名前のエイリアスではありません。
 
 ## 認証
 

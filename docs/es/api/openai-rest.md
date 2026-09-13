@@ -23,12 +23,13 @@ de middleware son la única excepción y se devuelven como texto plano (consulte
 | `POST` | `/v1/chat/completions` | Turno de chat, streaming o no streaming. |
 | `POST` | `/v1/embeddings` | Vectores de embedding para una o muchas entradas. |
 | `GET` | `/v1/models` | Modelos del router fusionados con los modelos de inicio rápido. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | `HealthResponse` de plana: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Enviar un task asíncrono de generación de vídeo. |
 | `GET` | `/v1/video/generations/{id}` | Hacer poll del estado / resultado de un task de vídeo. |
 
-`/api/health`, `/healthz` y `/readyz` son probes de readiness adicionales
-(alias estilo Kubernetes de `/v1/health`).
+`/api/health`, `/healthz` y `/readyz` son probes de readiness adicionales que
+sirven la **misma** carga `HealthResponse` de plana que `/v1/health` — las cuatro
+rutas son intercambiables, no solo alias de nombre.
 
 ## Autenticación
 

@@ -19,12 +19,12 @@ Arona 在 `/v1/*` 下暴露 OpenAI 兼容的 REST 接口，用于 LLM 聊天、e
 | `POST` | `/v1/chat/completions` | 聊天轮次，流式或非流式。 |
 | `POST` | `/v1/embeddings` | 一个或多个输入的嵌入向量。 |
 | `GET` | `/v1/models` | 路由器模型与快速上手模型合并。 |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`。 |
+| `GET` | `/v1/health` | plana `HealthResponse`：`{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`。 |
 | `POST` | `/v1/video/generations` | 提交一个异步视频生成任务。 |
 | `GET` | `/v1/video/generations/{id}` | 轮询视频任务的状态 / 结果。 |
 
-`/api/health`、`/healthz` 和 `/readyz` 是额外的就绪探测（`/v1/health` 的
-Kubernetes 风格别名）。
+`/api/health`、`/healthz` 和 `/readyz` 是额外的就绪探测，提供与 `/v1/health`
+**相同**的 plana `HealthResponse` 负载——四个路由可以互换，而不只是名称上的别名。
 
 ## 认证
 

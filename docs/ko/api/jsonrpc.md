@@ -15,7 +15,7 @@ Arona는 관리 평면을 위해 `/api/rpc`에 JSON-RPC 2.0 표면을 노출합�
   application/json`을 보내세요. JWT는 `Authorization: Bearer <jwt>` 헤더로 이동합니다. 요청 본문은 1MiB로 제한됩니다.
 - **WebSocket `GET /api/rpc`** — 장기 연결. 브라우저는 WebSocket 업그레이드에 사용자 지정 헤더를 설정할 수 없으므로, JWT는 `?token=<jwt>` 쿼리 매개변수로 이동합니다. 서버는 내부적으로 `Authorization: Bearer` 헤더로 접습니다(`packages/core/src/gateway/server.rs` 참조). 인증된 소켓은 무기한 연결 상태를 유지할 수 있습니다.
 - **배치 요청** — JSON 배열인 POST 본문은 요소별로 실행되고 같은 순서의 응답 JSON 배열로 응답됩니다.
-- **익명 액세스** — JWT 없이 WebSocket에서 공개 메서드(`auth.register`/`auth.login`/`auth.refresh`, `providers.list`, `system.status`)는 계속 호출 가능하며, `system.probe`는 소켓이 닫히기 전에 단일 ack로 응답됩니다. 다른 모든 메서드는 유효한 JWT가 필요하며, admin 게이트 메서드는 추가로 admin 계정이 필요합니다(아래 범례 참조). 익명 소켓은 10초 유휴 타임아웃에도 묶입니다.
+- **익명 액세스** — JWT 없이 WebSocket에서 공개 메서드(`auth.register`/`auth.login`/`auth.refresh`, `providers.list`, `system.status`, `Service.Info`)는 계속 호출 가능하며, `system.probe`는 소켓이 닫히기 전에 단일 ack로 응답됩니다. 다른 모든 메서드는 유효한 JWT가 필요하며, admin 게이트 메서드는 추가로 admin 계정이 필요합니다(아래 범례 참조). 익명 소켓은 10초 유휴 타임아웃에도 묶입니다.
 - **세션 첨부** — `POST /api/rpc`의 `x-session-id` 헤더는 스트리밍 알림과 함께 RPC 응답 자체도 해당 세션 채널에 푸시합니다.
 
 ## Ids
@@ -185,7 +185,8 @@ Tiers, quota 및 사용량 회계는 [Billing 및 사용량](../guides/billing-u
 
 | 메서드 | Auth | Params | 설명 |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Gateway 상태 집계: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Gateway 상태 집계: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — 마지막 네 개는 공유 버전 보고서이며, 기존 키를 바꾸지 않고 추가되었습니다. |
+| `Service.Info` | public | — | 모든 health 라우트가 보고하는 `VersionReport`: `version`, `build_hash`, `kind` 및 arona가 생략하는 선택적 `engine_version`. |
 | `system.probe` | anonymous (WS only) | — | WebSocket 전송을 통한 일회성 liveness probe. 서버는 `{ "ok": true, "status": "ok" }`를 ack하고 소켓을 닫습니다 — 익명 방문자는 열린 연결을 유지하지 않습니다. 인증되지 않은 소켓의 다른 모든 메서드는 `AUTH_ERROR`로 거부됩니다. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

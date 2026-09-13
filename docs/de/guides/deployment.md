@@ -214,18 +214,18 @@ Betriebliche Konsequenzen:
 
 ## Health-Probes
 
-Der Server stellt zwei nicht authentifizierte Health-Familien bereit (beide
-werden auch im [Operations-Leitfaden](./operations.md) behandelt):
+Der Server stellt eine nicht authentifizierte Health-Nutzlast auf vier Pfaden
+bereit (ebenfalls im [Operations-Leitfaden](./operations.md) behandelt):
 
-- `GET /healthz`, `GET /readyz` (Aliasse) und `GET /v1/health` liefern
-  `200` mit `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` liefert die plana-`HealthResponse`-Form: `status`,
-  `version`, `kind`, `uptime` (Sekunden), `network`, `build_hash` und
-  `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health` und `GET /api/health` liefern
+  alle `200` mit derselben plana `HealthResponse`: `status`, `version`, `kind`,
+  `uptime` (Sekunden), `network`, `build_hash` und `engine_version`.
+- `kind` meldet das Build-Profil (`dev` für einen Debug-Build, sonst `prod`) und
+  `build_hash` ist die kurze Git-Revision, aus der die Binärdatei gebaut wurde;
+  dieselben Felder identifizieren das laufende Artefakt auf jedem Pfad.
 
 Richten Sie Load Balancer, Supervisoren und Container-Healthchecks auf
-`/readyz` aus; verwenden Sie `/api/health`, wenn Sie Uptime- und
-Netzwerkdetails benötigen.
+`/readyz` aus; `/api/health` liefert dieselbe Nutzlast, keine umfangreichere.
 
 ## Upgrade und Backup
 

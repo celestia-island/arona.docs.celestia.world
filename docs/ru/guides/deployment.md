@@ -207,17 +207,18 @@ docker compose up -d
 
 ## Health-пробы
 
-Сервер открывает два семейства health-endpoint'ов без аутентификации (оба
-также описаны в [руководстве по эксплуатации](./operations.md)):
+Сервер открывает один и тот же health-payload без аутентификации на четырёх
+маршрутах (он также описан в [руководстве по эксплуатации](./operations.md)):
 
-- `GET /healthz`, `GET /readyz` (алиасы) и `GET /v1/health` возвращают
-  `200` с телом `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` возвращает форму plana `HealthResponse`: `status`,
-  `version`, `kind`, `uptime` (секунды), `network`, `build_hash`
-  и `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health` и `GET /api/health` возвращают
+  `200` с одним и тем же plana `HealthResponse`: `status`, `version`, `kind`,
+  `uptime` (секунды), `network`, `build_hash` и `engine_version`.
+- `kind` отражает профиль сборки (`dev` для debug-сборки, иначе `prod`), а
+  `build_hash` — короткая git-ревизия, из которой собран бинарник, поэтому одни
+  и те же поля идентифицируют работающий артефакт на каждом маршруте.
 
 Направляйте балансировщики нагрузки, супервизоры и контейнерные healthcheck'и
-на `/readyz`; используйте `/api/health`, когда нужны uptime и детали сети.
+на `/readyz`; `/api/health` отдаёт тот же payload, а не более насыщенный.
 
 ## Обновление и резервное копирование
 

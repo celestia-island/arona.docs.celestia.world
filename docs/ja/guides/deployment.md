@@ -148,12 +148,12 @@ docker compose up -d
 
 ## ヘルスプローブ
 
-サーバーは 2 つの認証不要のヘルスファミリーを公開します（どちらも[運用ガイド](./operations.md)で説明されています）:
+サーバーは 4 つのルートで単一の認証不要ヘルスペイロードを公開します（[運用ガイド](./operations.md)でも説明されています）:
 
-- `GET /healthz`、`GET /readyz`（エイリアス）、`GET /v1/health` は `200` と `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}` を返します。
-- `GET /api/health` は plana の `HealthResponse` シェイプを返します: `status`、`version`、`kind`、`uptime`（秒）、`network`、`build_hash`、`engine_version`。
+- `GET /healthz`、`GET /readyz`、`GET /v1/health`、`GET /api/health` はすべて `200` と同一の plana `HealthResponse` を返します: `status`、`version`、`kind`、`uptime`（秒）、`network`、`build_hash`、`engine_version`。
+- `kind` はビルドプロファイル（デバッグビルドなら `dev`、それ以外は `prod`）を報告し、`build_hash` はバイナリのビルド元である短い git リビジョンです。したがって同じフィールドがどのルートでも実行中のアーティファクトを特定します。
 
-ロードバランサー、スーパーバイザー、コンテナのヘルスチェックは `/readyz` に向け、uptime と network の詳細が必要な場合は `/api/health` を使用してください。
+ロードバランサー、スーパーバイザー、コンテナのヘルスチェックは `/readyz` に向けてください。`/api/health` は同じペイロードを提供するのであり、よりリッチなものではありません。
 
 ## アップグレードとバックアップ
 

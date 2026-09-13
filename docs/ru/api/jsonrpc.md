@@ -34,7 +34,7 @@ WebSocket-only метод живости, `system.probe` (всего 40 мето
   элемент за элементом и отвечает JSON-массивом ответов в том же порядке.
 - **Анонимный доступ** — по WebSocket без JWT публичные методы
   (`auth.register`/`auth.login`/`auth.refresh`, `providers.list`,
-  `system.status`) остаются вызываемыми, а `system.probe` отвечает одиночным
+  `system.status`, `Service.Info`) остаются вызываемыми, а `system.probe` отвечает одиночным
   ack перед закрытием сокета. Каждый прочий метод требует валидный JWT;
   гейтимые администратором методы дополнительно требуют admin-аккаунт
   (см. легенду ниже). Анонимные сокеты также ограничены 10-секундным idle
@@ -239,7 +239,8 @@ Tiers, квоты и учёт usage описаны в
 
 | Метод | Auth | Params | Описание |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Агрегированный статус шлюза: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Агрегированный статус шлюза: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — последние четыре — общий отчёт о версии, добавленный без изменения существующих ключей. |
+| `Service.Info` | public | — | `VersionReport`, который сообщает каждый health-маршрут: `version`, `build_hash`, `kind` и необязательный `engine_version`, который arona опускает. |
 | `system.probe` | anonymous (WS only) | — | Разовая проба живости по WebSocket-транспорту. Сервер подтверждает `{ "ok": true, "status": "ok" }` и затем закрывает сокет — анонимные посетители никогда не держат открытое соединение. Любой другой метод на неаутентифицированном сокете отклоняется с `AUTH_ERROR`. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

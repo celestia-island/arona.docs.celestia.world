@@ -200,16 +200,18 @@ Compose. يبني `Dockerfile` كلاً من `_cli` و`_agent` في باني
 
 ## فحوص الصحة
 
-يُكشف الخادم عن مجموعتي فحوص صحة غير مُصادَق عليهما (كلتاهما مغطاة أيضًا
+يكشف الخادم عن حمولة صحة واحدة غير مُصادَق عليها على أربعة مسارات (وهي مغطاة أيضًا
 في [دليل العمليات](./operations.md)):
 
-- `GET /healthz` و`GET /readyz` (مرادفان) و`GET /v1/health` تُعيد
-  `200` مع `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` يُعيد شكل plana `HealthResponse`: `status` و`version`
-  و`kind` و`uptime` (بالثواني) و`network` و`build_hash` و`engine_version`.
+- `GET /healthz` و`GET /readyz` و`GET /v1/health` و`GET /api/health` تُعيد جميعها
+  `200` مع نفس plana `HealthResponse`: `status` و`version` و`kind` و`uptime`
+  (بالثواني) و`network` و`build_hash` و`engine_version`.
+- يبلّغ `kind` عن ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك)،
+  و`build_hash` هو مراجعة git القصيرة التي بُني منها الملف التنفيذي، لذا تحدد
+  الحقول نفسها القطعة (artifact) قيد التشغيل على كل مسار.
 
-وجّه موازنات الحمل والمشرفين وفحوص صحة الحاويات إلى `/readyz`؛ واستخدم
-`/api/health` عندما تحتاج تفاصيل زمن التشغيل (uptime) والشبكة.
+وجّه موازنات الحمل والمشرفين وفحوص صحة الحاويات إلى `/readyz`؛ و`/api/health`
+يخدم نفس الحمولة، لا حمولة أغنى.
 
 ## الترقية والنسخ الاحتياطي
 

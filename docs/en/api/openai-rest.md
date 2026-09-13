@@ -21,12 +21,13 @@ exception and are returned as plain text (see [Authentication](#authentication))
 | `POST` | `/v1/chat/completions` | Chat turn, streaming or non-streaming. |
 | `POST` | `/v1/embeddings` | Embedding vectors for one or many inputs. |
 | `GET` | `/v1/models` | Router models merged with quick-start models. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Submit an async video generation task. |
 | `GET` | `/v1/video/generations/{id}` | Poll a video task's status / result. |
 
-`/api/health`, `/healthz` and `/readyz` are additional readiness probes
-(Kubernetes-style aliases of `/v1/health`).
+`/api/health`, `/healthz` and `/readyz` are additional readiness probes that
+serve the *same* plana `HealthResponse` payload as `/v1/health` — the four
+routes are interchangeable, not just aliases by name.
 
 ## Authentication
 

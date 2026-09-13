@@ -149,12 +149,12 @@ docker compose up -d
 
 ## Health probes
 
-서버는 두 개의 비인증 health 계열을 노출합니다(둘 다 [operations 가이드](./operations.md)에서도 다룸):
+서버는 네 개의 라우트에서 단일 비인증 health 페이로드를 노출합니다([operations 가이드](./operations.md)에서도 다룸):
 
-- `GET /healthz`, `GET /readyz`(별칭) 및 `GET /v1/health`는 `200`과 함께 `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`을 반환합니다.
-- `GET /api/health`는 plana `HealthResponse` 형태를 반환합니다: `status`, `version`, `kind`, `uptime`(초), `network`, `build_hash`, `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health`, `GET /api/health`는 모두 `200`과 함께 동일한 plana `HealthResponse`를 반환합니다: `status`, `version`, `kind`, `uptime`(초), `network`, `build_hash`, `engine_version`.
+- `kind`는 빌드 프로파일(디버그 빌드면 `dev`, 그 외에는 `prod`)을 보고하고, `build_hash`는 바이너리를 빌드한 짧은 git 리비전이므로, 같은 필드가 모든 라우트에서 실행 중인 아티팩트를 식별합니다.
 
-로드 밸런서, 슈퍼바이저, 컨테이너 healthcheck는 `/readyz`를 가리키세요. Uptime과 network 세부 정보가 필요하면 `/api/health`를 사용하세요.
+로드 밸런서, 슈퍼바이저, 컨테이너 healthcheck는 `/readyz`를 가리키세요. `/api/health`는 더 풍부한 것이 아니라 같은 페이로드를 제공합니다.
 
 ## 업그레이드 및 백업
 

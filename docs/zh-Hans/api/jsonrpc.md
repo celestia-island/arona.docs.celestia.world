@@ -28,7 +28,7 @@ providers、agents、memory、conversations、usage、billing、video、realtime
 - **批量请求** —— body 为 JSON 数组的 POST 会逐元素执行，并以相同顺序的响应
   JSON 数组应答。
 - **匿名访问** —— 在没有 JWT 的 WebSocket 上，公开方法（`auth.register`/
-  `auth.login`/`auth.refresh`、`providers.list`、`system.status`）仍可调用，
+  `auth.login`/`auth.refresh`、`providers.list`、`system.status`、`Service.Info`）仍可调用，
   `system.probe` 在 socket 关闭前以单个 ack 应答。其他所有方法都需要有效
   JWT；admin 门控方法还额外需要 admin 账号（见下方图例）。匿名 socket 还受
   10 秒空闲超时约束。
@@ -220,7 +220,8 @@ Tier、配额与用量核算见 [计费与用量](../guides/billing-usage.md)。
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `system.status` | public | — | 聚合 gateway 状态：`{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`。 |
+| `system.status` | public | — | 聚合 gateway 状态：`{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }`——最后四个是共享的版本报告，为附加字段，不改变任何既有键。 |
+| `Service.Info` | public | — | 每个健康路由都上报的 `VersionReport`：`version`、`build_hash`、`kind`，以及 arona 省略的可选 `engine_version`。 |
 | `system.probe` | anonymous（仅 WS） | — | 通过 WebSocket 传输的一次性存活 probe。服务器 ack `{ "ok": true, "status": "ok" }` 然后关闭 socket——匿名访客永远不会持有打开的连接。未认证 socket 上的任何其他方法都以 `AUTH_ERROR` 拒绝。 |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

@@ -14,21 +14,27 @@ Stolperfallen, über die Menschen stolpern. Die Bereitstellung selbst wird im
 
 ## Health-Matrix
 
-Alle drei Health-Endpunkte sind nicht authentifiziert und geben `200 OK` zurück,
+Alle vier Health-Endpunkte sind nicht authentifiziert und geben `200 OK` zurück,
 wann immer der Prozess bedient — es gibt keine Liveness-/Readiness-
 Unterscheidung:
 
 | Endpunkt | Antwort |
 | --- | --- |
-| `/healthz`, `/readyz` | `200` `{"status":"ok","version":<CARGO_PKG_VERSION>,"build_hash":<BUILD_HASH>,"models":<n>,"providers":<n>}` |
-| `/v1/health` | derselbe detaillierte Body wie oben |
-| `/api/health` | plana `HealthResponse`: `status`, `version` (`CARGO_PKG_VERSION`), `kind` (`Dev`), `uptime` (Sekunden), `network` (transport / region / asn), `build_hash` (`BUILD_HASH`), `engine_version` (`"0.1.0"`) |
+| `/healthz`, `/readyz` | `200` plana `HealthResponse` — die Feldliste unten, identisch auf jedem Pfad |
+| `/v1/health` | derselbe plana `HealthResponse`-Body |
+| `/api/health` | derselbe plana `HealthResponse`-Body |
 
-`/healthz` und `/readyz` sind Aliase desselben Handlers, und `/v1/health` teilt
-ihn, sodass die Kubernetes-artigen Probes und die OpenAI-kompatible
-Health-Route austauschbar sind. `/api/health` fügt uptime, network und
-engine_version hinzu. Verwenden Sie `/readyz` für Load Balancer und Supervisor;
-verwenden Sie `/api/health`, wenn Sie die umfangreichere Nutzlast benötigen.
+Jeder dieser Pfade liefert dieselbe plana `HealthResponse`: `status`,
+`version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (Sekunden), `network`
+(transport / region / asn), `build_hash` und `engine_version`. `/healthz` und
+`/readyz` sind Aliase desselben Handlers, und `/v1/health` und `/api/health`
+teilen ihn, sodass die Kubernetes-artigen Probes und die OpenAI-kompatible
+Health-Route wirklich austauschbar sind. `kind` folgt dem Build-Profil (`dev`
+für einen Debug-Build, sonst `prod`), `build_hash` ist die kurze Git-Revision,
+aus der die Binärdatei gebaut wurde, und `engine_version` ist `null` — arona
+plant externe Modellserver und hat keine eigene Engine, deren Version es
+ehrlich melden könnte. Verwenden Sie `/readyz` für Load Balancer und
+Supervisor.
 
 ## Protokollierung
 
@@ -115,10 +121,15 @@ Inhalt erzeugt hat.
 
 ### Versionsmeldung
 
-`version` in den Health-Bodies ist `CARGO_PKG_VERSION`; `build_hash` ist der zur
-Build-Zeit erzeugte `BUILD_HASH`-Wert, der von `packages/core/build.rs`
-ausgegeben wird. Vergleichen Sie `build_hash` über die Knoten hinweg, um zu
-bestätigen, dass alle dasselbe Artefakt ausführen.
+`version` in den Health-Bodies ist `CARGO_PKG_VERSION`; `build_hash` ist die
+kurze Git-Revision, die zur Build-Zeit vom gemeinsamen Build-Info-Crate von
+plana erfasst wird (`plana_build_info::emit_build_hash`, aufgerufen aus
+`packages/core/build.rs`), sodass sie sich nur ändert, wenn sich die Quellen
+ändern — mit Suffix `-dirty`, wenn der Baum nicht committete Änderungen hatte,
+und `unknown`, wenn die Quellen keine Git-Metadaten tragen. `kind` folgt dem
+Build-Profil (`dev` für einen Debug-Build, sonst `prod`). Vergleichen Sie
+`build_hash` über die Knoten hinweg, um zu bestätigen, dass alle dasselbe
+Artefakt ausführen.
 
-<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's HealthResponse (plana packages/protocol-core/src/http.rs:84-92). -->
-<!-- src: packages/core/src/gateway/server.rs:1197-1246,1507-1539 -->
+<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->

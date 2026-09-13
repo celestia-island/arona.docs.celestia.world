@@ -21,12 +21,12 @@ task 型 submit/poll 慣例。
 | `POST` | `/v1/chat/completions` | 聊天回合，串流或非串流。 |
 | `POST` | `/v1/embeddings` | 一個或多個輸入的 embedding 向量。 |
 | `GET` | `/v1/models` | 路由器模型合併 quick-start 模型。 |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`。 |
+| `GET` | `/v1/health` | plana `HealthResponse`：`{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`。 |
 | `POST` | `/v1/video/generations` | 送出非同步視訊生成任務。 |
 | `GET` | `/v1/video/generations/{id}` | 輪詢視訊任務的狀態／結果。 |
 
-`/api/health`、`/healthz` 與 `/readyz` 是額外的就緒探測
-（`/v1/health` 的 Kubernetes 型同義詞）。
+`/api/health`、`/healthz` 與 `/readyz` 是額外的就緒探測，提供與 `/v1/health`
+**相同**的 plana `HealthResponse` payload——四個路由可以互換，而不只是名稱上的同義詞。
 
 ## 認證
 

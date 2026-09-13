@@ -35,7 +35,7 @@ Jede Anfrage ist ein JSON-RPC-2.0-Objekt mit `jsonrpc: "2.0"`, einem
   Reihenfolge beantwortet.
 - **Anonymer Zugriff** — über WebSocket ohne JWT bleiben die öffentlichen
   Methoden (`auth.register`/`auth.login`/`auth.refresh`, `providers.list`,
-  `system.status`) aufrufbar, und `system.probe` wird mit einem einzigen Ack
+  `system.status`, `Service.Info`) aufrufbar, und `system.probe` wird mit einem einzigen Ack
   beantwortet, bevor der Socket geschlossen wird. Jede andere Methode erfordert
   ein gültiges JWT; die admin-gesperrten Methoden erfordern zusätzlich ein
   Admin-Konto (siehe Legende unten). Anonyme Sockets unterliegen außerdem einem
@@ -244,7 +244,8 @@ Sitzungskanal geschoben.
 
 | Methode | Auth | Parameter | Beschreibung |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Aggregierter Gateway-Status: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Aggregierter Gateway-Status: `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — die letzten vier sind der gemeinsame Versionsbericht, additiv ergänzt ohne Änderung eines bestehenden Schlüssels. |
+| `Service.Info` | public | — | Der `VersionReport`, den jeder Health-Pfad meldet: `version`, `build_hash`, `kind` und ein optionales `engine_version`, das arona auslässt. |
 | `system.probe` | anonymous (nur WS) | — | Einmaliger Liveness-Probe über den WebSocket-Transport. Der Server bestätigt `{ "ok": true, "status": "ok" }` und schließt dann den Socket — anonyme Besucher halten nie eine offene Verbindung. Jede andere Methode auf einem nicht authentifizierten Socket wird mit `AUTH_ERROR` abgelehnt. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

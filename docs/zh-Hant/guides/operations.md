@@ -12,19 +12,23 @@ backend 失敗如何對映為 HTTP 錯誤，以及常絆倒人的營運陷阱。
 
 ## 健康矩陣
 
-三個健康 endpoint 都不需認證，只要程序在提供服務就回傳 `200 OK`——
+四個健康 endpoint 都不需認證，只要程序在提供服務就回傳 `200 OK`——
 沒有 liveness／readiness 之分：
 
 | Endpoint | 回應 |
 | --- | --- |
-| `/healthz`、`/readyz` | `200` `{"status":"ok","version":<CARGO_PKG_VERSION>,"build_hash":<BUILD_HASH>,"models":<n>,"providers":<n>}` |
-| `/v1/health` | 與上方相同的詳細內文 |
-| `/api/health` | plana `HealthResponse`：`status`、`version`（`CARGO_PKG_VERSION`）、`kind`（`Dev`）、`uptime`（秒）、`network`（transport／region／asn）、`build_hash`（`BUILD_HASH`）、`engine_version`（`"0.1.0"`） |
+| `/healthz`、`/readyz` | `200` plana `HealthResponse`——即下方欄位清單，每個路由完全一致 |
+| `/v1/health` | 相同的 plana `HealthResponse` 內文 |
+| `/api/health` | 相同的 plana `HealthResponse` 內文 |
 
-`/healthz` 與 `/readyz` 是相同 handler 的同義詞，`/v1/health` 與其共用，
-因此 Kubernetes 型 probe 與 OpenAI 相容的健康路由可以互換。`/api/health`
-額外提供 uptime、network 與 engine 版本。負載平衡器與監督器用 `/readyz`；
-需要更豐富的 payload 時用 `/api/health`。
+這些路由都提供同一份 plana `HealthResponse`：`status`、`version`
+（`CARGO_PKG_VERSION`）、`kind`、`uptime`（秒）、`network`（transport／
+region／asn）、`build_hash` 與 `engine_version`。`/healthz` 與 `/readyz` 是
+相同 handler 的同義詞，`/v1/health` 與 `/api/health` 與其共用，因此
+Kubernetes 型 probe 與 OpenAI 相容的健康路由真正可以互換。`kind` 跟隨建置
+profile（debug 建置為 `dev`，否則為 `prod`），`build_hash` 是建置該二進位時的
+短 git 修訂號，`engine_version` 為 `null`——arona 排程的是外部模型伺服器，沒有
+自身的引擎可以如實回報版本。負載平衡器與監督器用 `/readyz`。
 
 ## 日誌
 
@@ -103,9 +107,12 @@ Zhipu GLM coding-plan endpoint 就是其一。**404 是可接受的**：backend 
 
 ### 版本回報
 
-健康內文中的 `version` 是 `CARGO_PKG_VERSION`；`build_hash` 是
-`packages/core/build.rs` 產出的建置期 `BUILD_HASH` 值。跨節點比較
-`build_hash` 以確認它們都運行相同的 artifact。
+健康內文中的 `version` 是 `CARGO_PKG_VERSION`；`build_hash` 是 plana 共享的
+build-info crate 在建置時擷取的短 git 修訂號（`plana_build_info::emit_build_hash`，
+由 `packages/core/build.rs` 呼叫），因此只在原始碼變更時才改變——工作樹有未
+提交變更時帶 `-dirty` 後綴，原始碼不含 git 中繼資料時為 `unknown`。`kind` 跟隨
+建置 profile（debug 建置為 `dev`，否則為 `prod`）。跨節點比較 `build_hash` 以
+確認它們都運行相同的 artifact。
 
-<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's HealthResponse (plana packages/protocol-core/src/http.rs:84-92). -->
-<!-- src: packages/core/src/gateway/server.rs:1197-1246,1507-1539 -->
+<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->

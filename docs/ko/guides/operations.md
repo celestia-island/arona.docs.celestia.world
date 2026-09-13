@@ -9,15 +9,15 @@ description: "실행 중인 arona-server를 위한 health 엔드포인트, RUST_
 
 ## Health 매트릭스
 
-세 health 엔드포인트 모두 비인증이며 프로세스가 서빙 중일 때마다 `200 OK`를 반환합니다 — liveness/readiness 구분은 없습니다:
+네 health 엔드포인트 모두 비인증이며 프로세스가 서빙 중일 때마다 `200 OK`를 반환합니다 — liveness/readiness 구분은 없습니다:
 
 | 엔드포인트 | 응답 |
 | --- | --- |
-| `/healthz`, `/readyz` | `200` `{"status":"ok","version":<CARGO_PKG_VERSION>,"build_hash":<BUILD_HASH>,"models":<n>,"providers":<n>}` |
-| `/v1/health` | 위와 동일한 상세 본문 |
-| `/api/health` | plana `HealthResponse`: `status`, `version`(`CARGO_PKG_VERSION`), `kind`(`Dev`), `uptime`(초), `network`(transport / region / asn), `build_hash`(`BUILD_HASH`), `engine_version`(`"0.1.0"`) |
+| `/healthz`, `/readyz` | `200` plana `HealthResponse` — 아래 필드 목록이며 모든 라우트에서 동일 |
+| `/v1/health` | 같은 plana `HealthResponse` 본문 |
+| `/api/health` | 같은 plana `HealthResponse` 본문 |
 
-`/healthz`와 `/readyz`는 같은 핸들러의 별칭이고, `/v1/health`도 이를 공유하므로, Kubernetes 스타일 probe와 OpenAI 호환 health 라우트는 상호 교환 가능합니다. `/api/health`는 uptime, network, engine version을 추가합니다. 로드 밸런서와 슈퍼바이저에는 `/readyz`를, 더 풍부한 페이로드가 필요할 때는 `/api/health`를 사용하세요.
+이 라우트들은 모두 같은 plana `HealthResponse`를 제공합니다: `status`, `version`(`CARGO_PKG_VERSION`), `kind`, `uptime`(초), `network`(transport / region / asn), `build_hash`, `engine_version`. `/healthz`와 `/readyz`는 같은 핸들러의 별칭이고, `/v1/health`와 `/api/health`도 이를 공유하므로, Kubernetes 스타일 probe와 OpenAI 호환 health 라우트는 실제로 상호 교환 가능합니다. `kind`는 빌드 프로파일을 따르며(디버그 빌드면 `dev`, 그 외에는 `prod`), `build_hash`는 바이너리를 빌드한 짧은 git 리비전이고, `engine_version`은 `null`입니다 — arona는 외부 모델 서버를 스케줄하며, 버전을 정직하게 보고할 자체 엔진이 없습니다. 로드 밸런서와 슈퍼바이저에는 `/readyz`를 사용하세요.
 
 ## 로깅
 
@@ -77,7 +77,7 @@ External probe는 `GET {base}/v1/models`(경로 접두어가 있는 기본 URL�
 
 ### 버전 보고
 
-Health 본문의 `version`은 `CARGO_PKG_VERSION`이고, `build_hash`는 `packages/core/build.rs`가 내보내는 빌드 시점 `BUILD_HASH` 값입니다. 노드 간 `build_hash`를 비교하여 모두 동일한 아티팩트를 실행하는지 확인하세요.
+Health 본문의 `version`은 `CARGO_PKG_VERSION`이고, `build_hash`는 plana의 공유 build-info crate가 빌드 시점에 캡처하는 짧은 git 리비전(`plana_build_info::emit_build_hash`, `packages/core/build.rs`에서 호출)이므로 소스가 바뀔 때만 변합니다 — 커밋되지 않은 변경이 있는 트리에는 접미사 `-dirty`가 붙고, 소스에 git 메타데이터가 없으면 `unknown`입니다. `kind`는 빌드 프로파일을 따릅니다(디버그 빌드면 `dev`, 그 외에는 `prod`). 노드 간 `build_hash`를 비교하여 모두 동일한 아티팩트를 실행하는지 확인하세요.
 
-<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's HealthResponse (plana packages/protocol-core/src/http.rs:84-92). -->
-<!-- src: packages/core/src/gateway/server.rs:1197-1246,1507-1539 -->
+<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->

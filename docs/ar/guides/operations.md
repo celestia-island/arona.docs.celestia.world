@@ -9,15 +9,15 @@ description: "نقاط نهاية الصحة، ومراقبة RUST_LOG، ومه�
 
 ## مصفوفة الصحة
 
-نقاط نهاية الصحة الثلاث غير موثَّقة وتُرجع `200 OK` كلما كانت العملية تخدم — لا يوجد تمييز بين الجاهزية للعمل (liveness) والاستعداد (readiness):
+نقاط نهاية الصحة الأربع غير موثَّقة وتُرجع `200 OK` كلما كانت العملية تخدم — لا يوجد تمييز بين الجاهزية للعمل (liveness) والاستعداد (readiness):
 
 | نقطة النهاية | الاستجابة |
 | --- | --- |
-| `/healthz`, `/readyz` | `200` `{"status":"ok","version":<CARGO_PKG_VERSION>,"build_hash":<BUILD_HASH>,"models":<n>,"providers":<n>}` |
-| `/v1/health` | نفس الجسم التفصيلي أعلاه |
-| `/api/health` | plana `HealthResponse`: `status`، `version` (`CARGO_PKG_VERSION`)، `kind` (`Dev`)، `uptime` (بالثواني)، `network` (transport / region / asn)، `build_hash` (`BUILD_HASH`)، `engine_version` (`"0.1.0"`) |
+| `/healthz`, `/readyz` | `200` خرج plana `HealthResponse` — قائمة الحقول أدناه، متطابقة على كل مسار |
+| `/v1/health` | نفس جسم plana `HealthResponse` |
+| `/api/health` | نفس جسم plana `HealthResponse` |
 
-`/healthz` و`/readyz` اسمان مستعاران لنفس المعالج، ويشاركهما `/v1/health`، لذا فإن الـ probes بأسلوب Kubernetes ومسار الصحة المتوافق مع OpenAI قابلان للتبادل. يضيف `/api/health` مدة التشغيل (uptime) والشبكة وإصدار المحرك. استخدم `/readyz` لموازنات الحمل والمشرفين؛ واستخدم `/api/health` عندما تحتاج إلى الحمولة الأغنى.
+كل واحد من هذه المسارات يخدم نفس plana `HealthResponse`: `status`، `version` (`CARGO_PKG_VERSION`)، `kind`، `uptime` (بالثواني)، `network` (transport / region / asn)، `build_hash` و`engine_version`. `/healthz` و`/readyz` اسمان مستعاران لنفس المعالج، ويشاركهما `/v1/health` و`/api/health`، لذا فإن الـ probes بأسلوب Kubernetes ومسار الصحة المتوافق مع OpenAI قابلان للتبادل فعلًا. يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك)، و`build_hash` هو مراجعة git القصيرة التي بُني منها الملف التنفيذي، و`engine_version` هو `null` — فـ arona تجدول خوادم نماذج خارجية وليس لديها محرك خاص بها يمكنها الإبلاغ عن إصداره بصدق. استخدم `/readyz` لموازنات الحمل والمشرفين.
 
 ## التسجيل
 
@@ -77,7 +77,7 @@ description: "نقاط نهاية الصحة، ومراقبة RUST_LOG، ومه�
 
 ### الإبلاغ عن الإصدار
 
-`version` في أجسام الصحة هو `CARGO_PKG_VERSION`؛ و`build_hash` هو قيمة `BUILD_HASH` الصادرة وقت البناء من `packages/core/build.rs`. قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
+`version` في أجسام الصحة هو `CARGO_PKG_VERSION`؛ و`build_hash` هو مراجعة git القصيرة الملتقطة وقت البناء بواسطة crate البناء المشترك في plana (`plana_build_info::emit_build_hash`، المُستدعاة من `packages/core/build.rs`)، لذا لا تتغير إلا عندما يتغير المصدر — مع لاحقة `-dirty` عندما كانت الشجرة تحمل تغييرات غير مُودَعة، و`unknown` عندما لا تحمل المصادر بيانات وصفية لـ git. يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك). قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
 
-<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's HealthResponse (plana packages/protocol-core/src/http.rs:84-92). -->
-<!-- src: packages/core/src/gateway/server.rs:1197-1246,1507-1539 -->
+<!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->

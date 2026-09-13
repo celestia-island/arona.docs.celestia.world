@@ -34,7 +34,7 @@ un objet `params` optionnel et un `id` optionnel.
   élément par élément et reçoit une réponse en tableau JSON dans le même ordre.
 - **Accès anonyme** — sur WebSocket sans JWT, les méthodes publiques
   (`auth.register`/`auth.login`/`auth.refresh`, `providers.list`,
-  `system.status`) restent appelables, et `system.probe` reçoit un unique ack
+  `system.status`, `Service.Info`) restent appelables, et `system.probe` reçoit un unique ack
   avant la fermeture du socket. Toute autre méthode requiert un JWT valide ;
   les méthodes gardées par admin requièrent en plus un compte admin (voir la
   légende ci-dessous). Les sockets anonymes sont aussi soumis à un timeout
@@ -243,7 +243,8 @@ sur le canal de session.
 
 | Méthode | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `system.status` | public | — | Statut agrégé du gateway : `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`. |
+| `system.status` | public | — | Statut agrégé du gateway : `{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }` — les quatre derniers sont le rapport de version partagé, ajoutés sans modifier aucune clé existante. |
+| `Service.Info` | public | — | Le `VersionReport` que rapporte chaque route de santé : `version`, `build_hash`, `kind` et un `engine_version` optionnel qu'arona omet. |
 | `system.probe` | anonyme (WS uniquement) | — | Sonde de liveness ponctuelle sur le transport WebSocket. Le serveur accuse `{ "ok": true, "status": "ok" }` puis ferme le socket — les visiteurs anonymes ne tiennent jamais de connexion ouverte. Toute autre méthode sur un socket non authentifié est rejetée avec `AUTH_ERROR`. |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->

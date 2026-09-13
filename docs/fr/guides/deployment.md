@@ -209,18 +209,19 @@ Conséquences opérationnelles :
 
 ## Sondes de santé
 
-Le serveur expose deux familles de santé non authentifiées (toutes deux aussi
-couvertes dans le [guide des opérations](./operations.md)) :
+Le serveur expose une seule charge de santé non authentifiée sur quatre routes
+(également couverte dans le [guide des opérations](./operations.md)) :
 
-- `GET /healthz`, `GET /readyz` (alias) et `GET /v1/health` renvoient
-  `200` avec `{"status":"ok","version":<version>,"build_hash":<hash>,"models":<n>,"providers":<n>}`.
-- `GET /api/health` renvoie la forme `HealthResponse` de plana : `status`,
-  `version`, `kind`, `uptime` (secondes), `network`, `build_hash` et
-  `engine_version`.
+- `GET /healthz`, `GET /readyz`, `GET /v1/health` et `GET /api/health` renvoient
+  tous `200` avec le même `HealthResponse` de plana : `status`, `version`,
+  `kind`, `uptime` (secondes), `network`, `build_hash` et `engine_version`.
+- `kind` rapporte le profil de compilation (`dev` pour une compilation debug,
+  `prod` sinon) et `build_hash` est la révision courte git à partir de laquelle
+  le binaire a été compilé ; les mêmes champs identifient donc l'artefact en
+  cours d'exécution sur chaque route.
 
 Pointez les load balancers, superviseurs et healthchecks de conteneurs vers
-`/readyz` ; utilisez `/api/health` quand vous avez besoin du détail uptime et
-réseau.
+`/readyz` ; `/api/health` sert la même charge, pas une plus riche.
 
 ## Mise à niveau et sauvegarde
 

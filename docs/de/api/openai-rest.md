@@ -23,12 +23,13 @@ zurückgegeben (siehe [Authentication](#authentication)).
 | `POST` | `/v1/chat/completions` | Chat-Runde, mit oder ohne Streaming. |
 | `POST` | `/v1/embeddings` | Embedding-Vektoren für eine oder mehrere Eingaben. |
 | `GET` | `/v1/models` | Router-Modelle, zusammengeführt mit den Quick-Start-Modellen. |
-| `GET` | `/v1/health` | `{"status": "ok", "version", "build_hash", "models", "providers"}`. |
+| `GET` | `/v1/health` | plana `HealthResponse`: `{"status": "ok", "version", "kind", "uptime", "network", "build_hash", "engine_version"}`. |
 | `POST` | `/v1/video/generations` | Asynchrone Video-Generierungsaufgabe einreichen. |
 | `GET` | `/v1/video/generations/{id}` | Status / Ergebnis einer Video-Aufgabe abfragen. |
 
-`/api/health`, `/healthz` und `/readyz` sind zusätzliche Readiness-Probes
-(Kubernetes-artige Aliasse von `/v1/health`).
+`/api/health`, `/healthz` und `/readyz` sind zusätzliche Readiness-Probes, die
+**dieselbe** plana `HealthResponse`-Nutzlast wie `/v1/health` liefern — die vier
+Pfade sind austauschbar, nicht nur dem Namen nach Aliasse.
 
 ## Authentifizierung
 

@@ -30,7 +30,7 @@ video、realtime 與串流聊天。它補足 OpenAI 相容的 REST 介面
   JSON 回應陣列回答。
 - **匿名存取** — 沒有 JWT 的 WebSocket 上，公開方法
   （`auth.register`／`auth.login`／`auth.refresh`、`providers.list`、
-  `system.status`）仍可呼叫，`system.probe` 在 socket 關閉前以單一
+  `system.status`、`Service.Info`）仍可呼叫，`system.probe` 在 socket 關閉前以單一
   ack 回答。其他每個方法都需要有效的 JWT；admin 閘控的方法額外需要
   admin 帳號（見下方圖例）。匿名 socket 也受 10 秒閒置逾時約束。
 - **Session 附掛** — `POST /api/rpc` 上的 `x-session-id` header
@@ -225,7 +225,8 @@ session 通道。
 
 | 方法 | Auth | 參數 | 說明 |
 | --- | --- | --- | --- |
-| `system.status` | public | — | 彙總的 gateway 狀態：`{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds" }`。 |
+| `system.status` | public | — | 彙總的 gateway 狀態：`{ "agents_online", "gpu_nodes", "models_deployed", "requests_total", "requests_per_minute", "uptime_seconds", "version", "build_hash", "kind", "engine_version" }`——最後四個是共享的版本報告，為附加欄位，不改變任何既有鍵。 |
+| `Service.Info` | public | — | 每個健康路由都回報的 `VersionReport`：`version`、`build_hash`、`kind`，以及 arona 省略的選用 `engine_version`。 |
 | `system.probe` | anonymous（僅 WS） | — | 經由 WebSocket 傳輸的一次性 liveness 探測。伺服器 ack `{ "ok": true, "status": "ok" }` 然後關閉 socket——匿名訪客永遠不會持有開啟的連線。未認證 socket 上任何其他方法都以 `AUTH_ERROR` 被拒絕。 |
 
 <!-- src: packages/core/src/gateway/rpc.rs:220-397 -->
