@@ -117,9 +117,11 @@ reconnects automatically; the panel tolerates restarts on either side (see
 
 ## Agent control plane RPC
 
-The whole agent surface is admin-gated: every method requires a valid JWT
-**and** an admin account (`validate_admin_jwt` checks `is_admin_email`;
-`packages/core/src/gateway/rpc.rs:106-118,301-337`).
+The whole agent surface is RBAC-gated: every method requires a valid
+credential **and** its permission point — `agent.read` for the registry reads
+(`agents.list`, `agents.status`, held by operators and administrators) and
+`deploy.execute` for the lifecycle arms
+(`require_permission` in `packages/core/src/gateway/rpc.rs`).
 
 | Method | Params | Returns |
 | --- | --- | --- |

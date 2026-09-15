@@ -57,7 +57,7 @@ API key 是 OpenAI 兼容面的机器凭据：
    **401 "Admin access required"**——整个管理面是被禁用而非开放。
 
 2. **`agents.*` 和 `engine.invoke` RPC 方法** —— agent 集群与引擎控制平面要求
-   一个账号 `users.is_admin = true` 的 JWT。已认证的非管理员以实现定义的错误码
+   一个账号 内置 `administrators` 组成员的 JWT（该组默认权限集强制全量开启）。已认证但无权限者以实现定义的错误码
    **-32007（`ADMIN_REQUIRED`）** 加方法专属提示被拒绝
    （例如 `agents.deploy starts model deployments on GPU nodes`）；**未认证**
    的调用方得到标准的 **-32005（`AUTH_ERROR`）**，服务器不会暴露该方法是有
@@ -68,9 +68,9 @@ API key 是 OpenAI 兼容面的机器凭据：
    `AUTH_ERROR` "Admin access required"。
 
 
-4. **管理面身份（`group.*`、`group.credits.*`、`ledger.self`、`keys.*`、`billing.plan` RPC 方法）** —— 这些方法接受用户 JWT，此外也接受与 admin 路由相同的 Bearer `ARONA_ADMIN_TOKEN`：此时令牌充当**运营者服务身份**（合成实例管理员 claims），供控制台工具驱动多租户面。令牌刻意不授权推理/聊天面（`chat.send`、`/v1/*`）——它是管理凭据，不是模型凭据。
+4. **管理面身份（`group.*`、`group.credits.*`、`ledger.self`、`keys.*`、`billing.plan` RPC 方法）** —— 这些方法接受用户 JWT，此外也接受与 admin 路由相同的 Bearer `ARONA_ADMIN_TOKEN`：此时令牌充当**运营者服务身份**（认证为第一个 administrators 组成员，授权走同一 RBAC 解析链），供控制台工具驱动多租户面。令牌刻意不授权推理/聊天面（`chat.send`、`/v1/*`）——它是管理凭据，不是模型凭据。
 
-**第一个注册用户成为管理员**（`users.is_admin = true`）。此后的每次注册都是
+**第一个注册账号加入内置 `administrators` 组**（该组默认权限集强制全量开启，这就是它成为管理员的方式）。此后的每次注册都是
 普通用户，并且只有在 `ARONA_REGISTRATION_OPEN` 设置为 truthy 值时注册才开放。
 
 ## 密码策略
@@ -132,7 +132,7 @@ RPM**；pro/enterprise tier 提高上限。月度配额执行共用同一条拒�
 时值得了解：
 
 - **`providers.list` 是公开的**，而 `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` 受 admin 门控（JWT + `users.is_admin`）。
+  `providers.remove` / `providers.test` 受 admin 门控（JWT + administrators-group membership）。
   公开读路径会暴露 provider
   目录，但没有任何秘密。
 - **`/ws/agent` 是一个未认证的控制平面**：GPU agent 不带凭据连接并自行注册

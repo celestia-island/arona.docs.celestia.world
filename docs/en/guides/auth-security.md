@@ -68,9 +68,11 @@ There are three distinct admin gates, each with its own credential:
    surface is disabled rather than opened up.
 
 2. **`agents.*` and `engine.invoke` RPC methods** — the agent cluster and
-   engine control plane require a JWT whose account has `users.is_admin =
-   true`. An authenticated non-admin is rejected with the implementation-
-   defined code **-32007 (`ADMIN_REQUIRED`)** plus a method-specific hint
+   engine control plane require the `system.write` / `deploy.*` RBAC
+   permissions (members of the built-in `administrators` group hold them by
+   default). An authenticated caller without the permission is rejected with
+   the implementation-defined code **-32007** plus `Permission required:
+   <permission>`
    (e.g. `agents.deploy starts model deployments on GPU nodes`); an
    **unauthenticated** caller gets the standard **-32005 (`AUTH_ERROR`)** so
    the server does not reveal that the method is privileged at all.
@@ -89,7 +91,7 @@ There are three distinct admin gates, each with its own credential:
    inference or chat surface (`chat.send`, `/v1/*`) — it is a management
    credential, not a model credential.
 
-The **first registered user becomes the admin** (`users.is_admin = true`).
+The **first registered account joins the built-in `administrators` group** — whose default permission set is forcibly enabled — which is what makes it an admin.
 Every later registration is a regular user, and registration is only open
 while `ARONA_REGISTRATION_OPEN` is set to a truthy value.
 
@@ -164,7 +166,7 @@ The following are documented as-is; they are intentional or accepted for now,
 but worth knowing when you expose an instance beyond a trusted network:
 
 - **`providers.list` is public**, while `providers.add` / `providers.update` /
-  `providers.remove` / `providers.test` are admin-gated (JWT + `users.is_admin`).
+  `providers.remove` / `providers.test` require the `provider.delete` / `provider.use` RBAC permissions.
   The public read path
   reveals the provider catalog but nothing secret.
 - **`/ws/agent` is an unauthenticated control plane**: GPU agents connect

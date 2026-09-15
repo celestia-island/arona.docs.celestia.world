@@ -5,6 +5,31 @@ description: "位于 /api/rpc 的 Arona 管理平面 JSON-RPC 2.0 API——通�
 
 # JSON-RPC API 参考
 
+## Permission map (full RBAC)
+
+Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
+
+| Method | Required permission |
+|---|---|
+| `engine.invoke` | `system.write` |
+| `providers.add` / `providers.update` / `providers.remove` / `providers.test` | `provider.create` / `provider.update` / `provider.delete` / `provider.use` |
+| `agents.list` / `agents.status` | `agent.read` (management plane: operators + administrators) |
+| `agents.register` / `agents.deregister` / `agents.deploy` / `agents.stop` | `deploy.execute` |
+| `keys.list` / `keys.create` / `keys.revoke` | `channel.list` / `channel.create` / `channel.delete` — self-service: the three points are in the `registered` baseline and each handler scopes to the caller's own account (attaching a key to a business group additionally needs that group's administrator) |
+| `billing.plan` | `config.read` |
+| `billing.plan.set`, video pricing set, model aliases write | `config.write` |
+| `group.list` / `group.get` | `workspace.list` |
+| `group.create` | `workspace.create` |
+| group management (update/delete/members/invites/models) | `workspace.manage` (global, or pinned to the group), or the group's own business admin |
+| `group.credits.topup` | `credits.mint` (opaque) |
+| admin usage query (`/api/admin/usage/query`) | `usage.read.all` (opaque — part of the administrators baseline) |
+| REST backends CRUD | `provider.list` / `provider.create` / `provider.delete` |
+| REST aliases | `config.read` / `config.write` |
+| `ledger.self`, `auth.*`, chat/embeddings | authenticated (self-scope), no permission point |
+
+Denials return `-32007` `Permission required: <permission>` for authenticated callers and the standard auth error for anonymous ones.
+
+
 Arona 在 `/api/rpc` 暴露 JSON-RPC 2.0 接口，用于管理平面：auth、keys、
 providers、agents、memory、conversations、usage、billing、video、realtime
 和流式聊天。它与 OpenAI 兼容 REST 面（`/v1/*`，见
@@ -69,7 +94,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | `-32007` | `ADMIN_REQUIRED` | 已认证**非管理员**调用 admin 门控方法（`agents.*`、`engine.invoke`、`providers.*` 变更）；消息包含方法专属提示。 |
 
 > `agents.*`、`engine.invoke` 和 `providers.*` 变更方法仅限 admin：它们要求账号
-> `users.is_admin = true` 的 JWT。已认证的非管理员以 `-32007`
+> 内置 `administrators` 组成员的 JWT（该组默认权限集强制全量开启）。已认证但无权限者以 `-32007`
 > （`ADMIN_REQUIRED`）被拒绝；未认证的调用方得到标准的 `AUTH_ERROR`，
 > 服务器不会暴露该方法是有特权的。
 
@@ -79,7 +104,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | --- | --- |
 | **public** | 不需要凭据。 |
 | **JWT** | HTTP 上 `Authorization: Bearer <jwt>`，或 WebSocket 上 `?token=<jwt>`。 |
-| **admin（JWT + is_admin）** | 账号 `users.is_admin = true` 的 Bearer JWT。 |
+| **admin（RBAC 权限）** | 内置 `administrators` 组成员的 Bearer JWT，或操作员服务令牌。 |
 | **admin token** | Bearer `ARONA_ADMIN_TOKEN`（环境配置；未设置时方法总是被拒绝，默认拒绝）。 |
 
 本文档中的所有示例凭据和地址都是占位符（RFC 5737 文档 IP、`sk-xxx` key）。
@@ -103,14 +128,14 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `engine.invoke` | admin（JWT + is_admin） | `model`（string）、`method`（string）、`params?`（object） | 在提供 `model` 的 backend 上同步请求/响应调用任意引擎方法——`sensor.ingest` / `control.setpoint` 风格调用的高频通道（20–30 Hz 循环）。结果是 backend 的原始响应。 |
+| `engine.invoke` | admin（RBAC 权限，见权限映射表） | `model`（string）、`method`（string）、`params?`（object） | 在提供 `model` 的 backend 上同步请求/响应调用任意引擎方法——`sensor.ingest` / `control.setpoint` 风格调用的高频通道（20–30 Hz 循环）。结果是 backend 的原始响应。 |
 
 ## Auth
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
 | `auth.register` | public | `email`、`password`、`name?` | 注册账号。只在注册开放时允许（`ARONA_REGISTRATION_OPEN`）；第一个注册用户成为管理员。返回与 `auth.login` 相同的 token 响应（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）。 |
-| `auth.login` | public | `email`、`password` | 登录。返回 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, is_admin }`）。按 IP 和账号限流。 |
+| `auth.login` | public | `email`、`password` | 登录。返回 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, permissions }` (effective permission names)）。按 IP 和账号限流。 |
 | `auth.refresh` | public | `refresh_token` | 用 refresh token 兑换新的 access token（和一个新的 refresh token）。重放或过期的 refresh token 以 `AUTH_ERROR` 拒绝。 |
 | `auth.me` | JWT | — | 当前用户资料：`{ "id", "email", "name" }`。 |
 
@@ -145,25 +170,25 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | `group.credits.allocate` | 组 admin / 平台 | `group_id`、`user_id`（邮箱）、`points`、`note?` | 原子地将积分从组池转入成员个人钱包（池不足整笔拒绝）。 |
 | `ledger.self` | JWT 或 admin token | — | 调用者的个人积分钱包：余额 + 近期流水。 |
 | `providers.list` | **public** | — | 列出已知 provider：内置官方条目加自定义条目，作为展示元数据（`id`、`name`、`description`、`website_domain`、`is_official`、`is_operator`）。按设计公开——列表不携带凭据；只有下面的变更操作受 admin 门控。 |
-| `providers.add` | admin（JWT + is_admin） | `id`、`name`、`description?`、`website_domain?` | 添加自定义 provider 条目。返回 `{ "ok": true }`。 |
-| `providers.update` | admin（JWT + is_admin） | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自定义 provider 的字段（只更新提供的）。返回 `{ "ok": true }`。 |
-| `providers.remove` | admin（JWT + is_admin） | `provider_id` | 移除自定义 provider。返回 `{ "ok": true }`。 |
-| `providers.test` | admin（JWT + is_admin） | — | 测试 provider 连接。Stub：返回 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
+| `providers.add` | admin（RBAC 权限，见权限映射表） | `id`、`name`、`description?`、`website_domain?` | 添加自定义 provider 条目。返回 `{ "ok": true }`。 |
+| `providers.update` | admin（RBAC 权限，见权限映射表） | `provider_id`、`name?`、`description?`、`website_domain?` | 更新自定义 provider 的字段（只更新提供的）。返回 `{ "ok": true }`。 |
+| `providers.remove` | admin（RBAC 权限，见权限映射表） | `provider_id` | 移除自定义 provider。返回 `{ "ok": true }`。 |
+| `providers.test` | admin（RBAC 权限，见权限映射表） | — | 测试 provider 连接。Stub：返回 `{ "ok": true, "message": "Provider connection test not yet implemented" }`。 |
 
 ## Agents
 
-所有 `agents.*` 方法仅限 admin（JWT + `is_admin`）。Agent 节点通过
+所有 `agents.*` 方法需要 `agent.read`（注册表读取）/ `deploy.execute`（生命周期）RBAC 权限。Agent 节点通过
 `GET /ws/agent` 出站连接；该 RPC 组控制注册表（见
 [Agent 集群](../guides/agent-cluster.md)）。
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `agents.list` | admin（JWT + is_admin） | — | 列出已注册的 agent 节点：id、name、host、`online`/`offline` 状态（基于心跳）、GPU 摘要、已部署模型、version、时间戳。 |
-| `agents.register` | admin（JWT + is_admin） | `machine_name`、`version` | 向 tunnel 管理器注册 agent 节点。返回 `{ "agent_id", "token" }`（token 是 agent 的控制平面凭据）。 |
-| `agents.deregister` | admin（JWT + is_admin） | `agent_id` | 注销（断开）一个 agent。返回 `{ "ok": true }`。 |
-| `agents.status` | admin（JWT + is_admin） | `agent_id` | 单 agent 状态：online 标志、host、GPU 摘要、已加载模型、GPU 利用率、心跳/连接时间戳。 |
-| `agents.deploy` | admin（JWT + is_admin） | `model_id`、`agent_id?`（空/缺失 = 最少负载节点；无在线节点则报错） | 在 agent 上部署模型。返回 `{ "ok": true, "stream_id" }` —— 订阅 SSE 旁路的 `stream_id` 以接收 `models.progress` 下载通知。 |
-| `agents.stop` | admin（JWT + is_admin） | `agent_id`、`model_id` | 停止已部署的模型。返回 `{ "ok": true, "stream_id": null }`（无进度流）。 |
+| `agents.list` | admin（RBAC 权限，见权限映射表） | — | 列出已注册的 agent 节点：id、name、host、`online`/`offline` 状态（基于心跳）、GPU 摘要、已部署模型、version、时间戳。 |
+| `agents.register` | admin（RBAC 权限，见权限映射表） | `machine_name`、`version` | 向 tunnel 管理器注册 agent 节点。返回 `{ "agent_id", "token" }`（token 是 agent 的控制平面凭据）。 |
+| `agents.deregister` | admin（RBAC 权限，见权限映射表） | `agent_id` | 注销（断开）一个 agent。返回 `{ "ok": true }`。 |
+| `agents.status` | admin（RBAC 权限，见权限映射表） | `agent_id` | 单 agent 状态：online 标志、host、GPU 摘要、已加载模型、GPU 利用率、心跳/连接时间戳。 |
+| `agents.deploy` | admin（RBAC 权限，见权限映射表） | `model_id`、`agent_id?`（空/缺失 = 最少负载节点；无在线节点则报错） | 在 agent 上部署模型。返回 `{ "ok": true, "stream_id" }` —— 订阅 SSE 旁路的 `stream_id` 以接收 `models.progress` 下载通知。 |
+| `agents.stop` | admin（RBAC 权限，见权限映射表） | `agent_id`、`model_id` | 停止已部署的模型。返回 `{ "ok": true, "stream_id": null }`（无进度流）。 |
 
 ## Memory
 

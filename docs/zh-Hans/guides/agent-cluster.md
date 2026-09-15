@@ -100,9 +100,10 @@ _agent
 
 ## Agent 控制平面 RPC
 
-整个 agent 接口都有 admin 门禁：每个方法都需要有效 JWT **且**是 admin 账号
-（`validate_admin_jwt` 检查 `is_admin_email`；
-`packages/core/src/gateway/rpc.rs:106-118,301-337`）。
+整个 agent 接口都有 RBAC 门禁：每个方法都需要有效凭据**且**持有对应权限点——
+注册表读取（`agents.list`、`agents.status`）需要 `agent.read`（operators 与
+administrators 持有），生命周期操作需要 `deploy.execute`
+（`require_permission`，见 `packages/core/src/gateway/rpc.rs`）。
 
 | 方法 | 参数 | 返回 |
 | --- | --- | --- |

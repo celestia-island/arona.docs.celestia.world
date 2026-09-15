@@ -75,7 +75,7 @@ Server events are pushed as `realtime.event` notifications with params
 ## `engine.invoke`
 
 `engine.invoke` is the generic **synchronous** engine-method channel
-(ADMIN: JWT + `is_admin`; params `model`, `method`, `params?` —
+(ADMIN: `system.write` RBAC permission; params `model`, `method`, `params?` —
 `packages/core/src/gateway/rpc.rs:261-264,2049-2079`). It invokes an arbitrary
 method on the backend serving `model` and returns the result directly, making
 it the high-frequency perception/control channel: `sensor.ingest`,

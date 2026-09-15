@@ -5,6 +5,31 @@ description: "Arona management-plane JSON-RPC 2.0 API at /api/rpc — chat, real
 
 # JSON-RPC API Reference
 
+## Permission map (full RBAC)
+
+Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
+
+| Method | Required permission |
+|---|---|
+| `engine.invoke` | `system.write` |
+| `providers.add` / `providers.update` / `providers.remove` / `providers.test` | `provider.create` / `provider.update` / `provider.delete` / `provider.use` |
+| `agents.list` / `agents.status` | `agent.read` (management plane: operators + administrators) |
+| `agents.register` / `agents.deregister` / `agents.deploy` / `agents.stop` | `deploy.execute` |
+| `keys.list` / `keys.create` / `keys.revoke` | `channel.list` / `channel.create` / `channel.delete` — self-service: the three points are in the `registered` baseline and each handler scopes to the caller's own account (attaching a key to a business group additionally needs that group's administrator) |
+| `billing.plan` | `config.read` |
+| `billing.plan.set`, video pricing set, model aliases write | `config.write` |
+| `group.list` / `group.get` | `workspace.list` |
+| `group.create` | `workspace.create` |
+| group management (update/delete/members/invites/models) | `workspace.manage` (global, or pinned to the group), or the group's own business admin |
+| `group.credits.topup` | `credits.mint` (opaque) |
+| admin usage query (`/api/admin/usage/query`) | `usage.read.all` (opaque — part of the administrators baseline) |
+| REST backends CRUD | `provider.list` / `provider.create` / `provider.delete` |
+| REST aliases | `config.read` / `config.write` |
+| `ledger.self`, `auth.*`, chat/embeddings | authenticated (self-scope), no permission point |
+
+Denials return `-32007` `Permission required: <permission>` for authenticated callers and the standard auth error for anonymous ones.
+
+
 Arona exposes a JSON-RPC 2.0 surface at `/api/rpc` for the management plane:
 auth, keys, providers, agents, memory, conversations, usage, billing, video,
 realtime and streaming chat. It complements the OpenAI-compatible REST
@@ -81,7 +106,7 @@ full catalog in [Events & Notifications](./events.md).
 | `-32007` | `ADMIN_REQUIRED` | Authenticated **non-admin** calling an admin-gated method (`agents.*`, `engine.invoke`, `providers.*` mutations); the message includes a method-specific hint. |
 
 > The `agents.*`, `engine.invoke` and provider-mutation methods are admin-only: they require a
-> JWT whose account has `users.is_admin = true`. An authenticated non-admin
+> JWT of an administrators-group member. An authenticated non-admin
 > is rejected with `-32007` (`ADMIN_REQUIRED`); an unauthenticated caller
 > gets the standard `AUTH_ERROR` so the server does not reveal that the
 > method is privileged.
@@ -92,7 +117,7 @@ full catalog in [Events & Notifications](./events.md).
 | --- | --- |
 | **public** | No credentials required. |
 | **JWT** | `Authorization: Bearer <jwt>` on HTTP, or `?token=<jwt>` on WebSocket. |
-| **admin (JWT + is_admin)** | Bearer JWT of an account with `users.is_admin = true`. |
+| **admin (RBAC permission — see the permission map)** | Bearer JWT of a member of the built-in `administrators` group (or the operator service token, which authenticates as the first administrators member). |
 | **admin token** | Bearer `ARONA_ADMIN_TOKEN` (env-configured; when unset the method is always denied, default-deny). |
 
 All example credentials and addresses in this document are placeholders
@@ -118,14 +143,14 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `engine.invoke` | admin (JWT + is_admin) | `model` (string), `method` (string), `params?` (object) | Synchronous request/response invocation of an arbitrary engine method on the backend serving `model` — the high-frequency channel for `sensor.ingest` / `control.setpoint` style calls (20–30 Hz loops). The result is the backend's raw response. |
+| `engine.invoke` | admin (RBAC permission — see the permission map) | `model` (string), `method` (string), `params?` (object) | Synchronous request/response invocation of an arbitrary engine method on the backend serving `model` — the high-frequency channel for `sensor.ingest` / `control.setpoint` style calls (20–30 Hz loops). The result is the backend's raw response. |
 
 ## Auth
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
 | `auth.register` | public | `email`, `password`, `name?` | Register an account. Only allowed while registration is open (`ARONA_REGISTRATION_OPEN`); the first registered user becomes the admin. Returns the same token response as `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`). |
-| `auth.login` | public | `email`, `password` | Log in. Returns `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`). Rate-limited per IP and account. |
+| `auth.login` | public | `email`, `password` | Log in. Returns `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, permissions }` (effective permission names)). Rate-limited per IP and account. |
 | `auth.refresh` | public | `refresh_token` | Exchange a refresh token for a fresh access token (and a new refresh token). Reused or expired refresh tokens are rejected with `AUTH_ERROR`. |
 | `auth.me` | JWT | — | Current user profile: `{ "id", "email", "name" }`. |
 
@@ -160,25 +185,25 @@ model behind this legend.
 | `group.credits.allocate` | group admin / platform | `group_id`, `user_id` (email), `points`, `note?` | Atomically move points from the group pool into a member's personal wallet (refused whole on a short pool). |
 | `ledger.self` | JWT or admin token | — | The caller's personal points wallet: balance + recent entries. |
 | `providers.list` | **public** | — | List known providers: built-in official entries plus custom ones, as display metadata (`id`, `name`, `description`, `website_domain`, `is_official`, `is_operator`). Public by design — the list carries no credentials; only the mutations below are admin-gated. |
-| `providers.add` | admin (JWT + is_admin) | `id`, `name`, `description?`, `website_domain?` | Add a custom provider entry. Returns `{ "ok": true }`. |
-| `providers.update` | admin (JWT + is_admin) | `provider_id`, `name?`, `description?`, `website_domain?` | Update a custom provider's fields (only the provided ones). Returns `{ "ok": true }`. |
-| `providers.remove` | admin (JWT + is_admin) | `provider_id` | Remove a custom provider. Returns `{ "ok": true }`. |
-| `providers.test` | admin (JWT + is_admin) | — | Test a provider connection. Stub: returns `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
+| `providers.add` | admin (RBAC permission — see the permission map) | `id`, `name`, `description?`, `website_domain?` | Add a custom provider entry. Returns `{ "ok": true }`. |
+| `providers.update` | admin (RBAC permission — see the permission map) | `provider_id`, `name?`, `description?`, `website_domain?` | Update a custom provider's fields (only the provided ones). Returns `{ "ok": true }`. |
+| `providers.remove` | admin (RBAC permission — see the permission map) | `provider_id` | Remove a custom provider. Returns `{ "ok": true }`. |
+| `providers.test` | admin (RBAC permission — see the permission map) | — | Test a provider connection. Stub: returns `{ "ok": true, "message": "Provider connection test not yet implemented" }`. |
 
 ## Agents
 
-All `agents.*` methods are admin-only (JWT + `is_admin`). Agent nodes connect
+All `agents.*` methods require the `agent.read` (registry reads) / `deploy.execute` (lifecycle) RBAC permissions. Agent nodes connect
 outbound over `GET /ws/agent`; this RPC group controls the registry (see
 [Agent Cluster](../guides/agent-cluster.md)).
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `agents.list` | admin (JWT + is_admin) | — | List registered agent nodes: id, name, host, `online`/`offline` status (heartbeat-based), GPU summary, deployed models, version, timestamps. |
-| `agents.register` | admin (JWT + is_admin) | `machine_name`, `version` | Register an agent node with the tunnel manager. Returns `{ "agent_id", "token" }` (the token is the agent's control-plane credential). |
-| `agents.deregister` | admin (JWT + is_admin) | `agent_id` | Deregister (disconnect) an agent. Returns `{ "ok": true }`. |
-| `agents.status` | admin (JWT + is_admin) | `agent_id` | Per-agent status: online flag, host, GPU summary, loaded models, GPU utilization, heartbeat/connection timestamps. |
-| `agents.deploy` | admin (JWT + is_admin) | `model_id`, `agent_id?` (empty/missing = least-loaded node; errors if none online) | Deploy a model on an agent. Returns `{ "ok": true, "stream_id" }` — subscribe to `stream_id` on the SSE sidecar for `models.progress` download notifications. |
-| `agents.stop` | admin (JWT + is_admin) | `agent_id`, `model_id` | Stop a deployed model. Returns `{ "ok": true, "stream_id": null }` (no progress stream). |
+| `agents.list` | admin (RBAC permission — see the permission map) | — | List registered agent nodes: id, name, host, `online`/`offline` status (heartbeat-based), GPU summary, deployed models, version, timestamps. |
+| `agents.register` | admin (RBAC permission — see the permission map) | `machine_name`, `version` | Register an agent node with the tunnel manager. Returns `{ "agent_id", "token" }` (the token is the agent's control-plane credential). |
+| `agents.deregister` | admin (RBAC permission — see the permission map) | `agent_id` | Deregister (disconnect) an agent. Returns `{ "ok": true }`. |
+| `agents.status` | admin (RBAC permission — see the permission map) | `agent_id` | Per-agent status: online flag, host, GPU summary, loaded models, GPU utilization, heartbeat/connection timestamps. |
+| `agents.deploy` | admin (RBAC permission — see the permission map) | `model_id`, `agent_id?` (empty/missing = least-loaded node; errors if none online) | Deploy a model on an agent. Returns `{ "ok": true, "stream_id" }` — subscribe to `stream_id` on the SSE sidecar for `models.progress` download notifications. |
+| `agents.stop` | admin (RBAC permission — see the permission map) | `agent_id`, `model_id` | Stop a deployed model. Returns `{ "ok": true, "stream_id": null }` (no progress stream). |
 
 ## Memory
 

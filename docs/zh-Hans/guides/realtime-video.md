@@ -65,7 +65,7 @@ usage 用于计费（`packages/core/src/gateway/realtime.rs:32-85`）。
 ## `engine.invoke`
 
 `engine.invoke` 是通用的**同步**引擎方法通道
-（ADMIN：JWT + `is_admin`；参数 `model`、`method`、`params?` ——
+（ADMIN：`system.write` RBAC 权限；参数 `model`、`method`、`params?` ——
 `packages/core/src/gateway/rpc.rs:261-264,2049-2079`）。它在提供 `model` 的
 backend 上调用任意方法并直接返回结果，使其成为高频感知/控制通道：
 `sensor.ingest`、`control.setpoint` 风格调用，20-30 Hz 循环。没有通用调用通道
