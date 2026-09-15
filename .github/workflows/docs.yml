@@ -20,6 +20,7 @@ concurrency:
 jobs:
   build:
     runs-on: [self-hosted, linux, x64, local]
+    timeout-minutes: 120
     env:
       # This repo has no local bare mirror on the runners, and the global
       # insteadOf rewrite for celestia-island/arona prefix-matches this repo
@@ -54,6 +55,7 @@ jobs:
   deploy:
     needs: build
     runs-on: [self-hosted, linux, x64, local]
+    timeout-minutes: 120
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
