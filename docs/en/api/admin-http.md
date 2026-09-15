@@ -298,13 +298,15 @@ With `include_records: true` each row carries `id`, `ref_id`, `api_key_id`,
 
 Notes:
 
-- `cost_usd` is `SUM(cost)` with `NULL` costs ignored (rows for unpriced
-  models and zero-token realtime rows contribute `0`).
+- `cost_usd` is `SUM(cost)` with `NULL` costs ignored — every metered
+  request now writes a cost (a model with no pricing row is billed at the
+  fallback rate described in the billing guide, a zero-token row costs `0`),
+  so `NULL` only survives on rows written before that change.
 - Grouping by `ref` yields `"key": null` for the bucket of reference-less
   rows when the query is global.
 - Realtime sessions started with a `ref_id` write usage rows even when the
   engine reported zero tokens (local CEP speech engines) — those rows show
-  `0` tokens and `null` cost.
+  `0` tokens and `0` cost.
 - Malformed `since`/`until` → `400` `bad_since` / `bad_until`;
   unknown `group_by` → `400` `bad_group_by`; DB failure → `500`
   `internal_error` (details in the server log).

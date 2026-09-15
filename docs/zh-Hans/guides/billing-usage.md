@@ -17,13 +17,14 @@ Arona 计量每个模型请求，并在 gateway 上执行分层配额与限流�
 | 列 | 类型 | 含义 |
 | --- | --- | --- |
 | `id` | `UUID` | 主键，自动生成。 |
-| `api_key_id` | `VARCHAR(64)` | **key 前缀**——API key 的前 8 个字符（key 形如 `arona-{uuid}`）——或 JWT 归属的 RPC 通道的合成 `jwt-<user-uuid>` id。 |
+| `api_key_id` | `VARCHAR(64)` | **掩码 key id**——API key 的前 8 个字符 + 省略号 + 后 4 个字符（key 形如 `arona-{uuid}`）——或 JWT 归属的 RPC 通道的合成 `jwt-<user-uuid>` id。仅用于展示：归属判定用下面的 `api_key_row_id`。 |
+| `api_key_row_id` | `UUID` | 该请求实际通过认证的 `api_keys` 行。配额与用量查询按它关联；该列存在之前写入的行是 `NULL`，回退到 `api_key_id` 前 8 字符匹配（每 256 个 key 一个桶）。 |
 | `model` | `VARCHAR(128)` | 请求路由到的模型 id。 |
 | `backend` | `VARCHAR(64)` | Backend kind：`gateway`、`rpc`、`realtime` 或 backend 能力名称。 |
 | `prompt_tokens` | `INTEGER` | 输入 token，上游报告或估算。 |
 | `completion_tokens` | `INTEGER` | 输出 token，上游报告或估算。 |
 | `total_tokens` | `INTEGER` | 两者之和。 |
-| `cost` | `DOUBLE PRECISION` | 计算出的 USD 成本；模型没有定价行时为 `NULL`。 |
+| `cost` | `DOUBLE PRECISION` | 计算出的 USD 成本；被计量的请求不会再写 `NULL`（没有定价行的模型按下方回退费率计费）。 |
 | `created_at` | `TIMESTAMPTZ` | 请求完成的时间。 |
 
 `api_key_id`、`model` 和 `created_at` 上有索引（月度聚合和限流窗口扫描的列）。
@@ -33,10 +34,14 @@ Arona 计量每个模型请求，并在 gateway 上执行分层配额与限流�
 usage 在每个被计量的通道上记录：
 
 1. **REST 非流式** —— `POST /v1/chat/completions` 和
-   `POST /v1/embeddings` 在响应生成后记录上游报告的确切 usage。
+   `POST /v1/embeddings` 在响应生成后记录上游报告的 usage。若上游没有报告可用的
+   usage 则改用本地估算：自托管后端返回的是 `0/0/0` 而不是省略 `usage` 字段，
+   这种报告绝不能让请求恰好按零计费。
 2. **REST 流式（SSE）** —— 当流携带上游报告的 usage 时以其为准（OpenAI
-   兼容的终止块 `usage` 字段）；否则记录本地 CJK 感知分词器估算
-   （`estimate_usage`）的原值。既没有文本也没有 usage 的流**完全不被**记录。
+   兼容的终止块 `usage` 字段）；否则（包括报告 `0/0/0` 的情况）记录本地 CJK
+   感知分词器估算（`estimate_usage`）的原值。未正常收尾的流——上游中途报错，或客户端断连
+   丢弃响应体——同样按已生成的内容计费，由响应体持有的计费守卫完成。只有既
+   没有文本也没有 usage 的流**完全不被**记录。
 3. **RPC `chat.send`** —— 同样的估算与上游对比逻辑；行以合成的
    `jwt-<user-uuid>` id 归属，从而能 join 回用户。
 4. **实时会话** —— 每个完成的 `response_done` 转录记录其 token usage
@@ -57,8 +62,13 @@ cost = prompt_tokens / 1_000_000 * input_price
      + completion_tokens / 1_000_000 * output_price
 ```
 
-表中的模型匹配基于小写化模型 id 的子串（更具体的家族优先）。当模型没有定价行
-时，`cost` 为 `NULL`。**不要在 arona 中重复实现定价——更新 plana 的表。**
+表中的模型匹配基于小写化模型 id 的子串（更具体的家族优先）。**没有定价行的
+模型不是免费的**：按 plana 自身的回退估算计费
+（`plana_llm_provider::metering::estimate_cost`，按 provider 区分，通用分支为
+每 100 万输入/输出 token 分别 `3.00` / `15.00` USD），并以 WARN 日志点名该模型
+（每个模型每个进程只报一次），产生的成本计入配额。这正是自托管 quick-start 模型
+与全部 embedding 家族不再写「零消耗」的 `NULL` cost 行的原因（在无配额的 tier
+上，那等于永久免费）。**不要在 arona 中重复实现定价——把缺失的行补进 plana 的表。**
 
 ## 层级
 
@@ -115,8 +125,10 @@ JWT 认证的 `chat.send` 经过同样的月度配额门禁，但针对的是**�
 组与用户各有钱包（`ledger_accounts`，用户一人一个个人钱包、一组一个资金池）。
 结算**积分优先**：每笔计量请求尝试从划账账户（组 key 划组池，否则个人钱包）
 扣除 `round(cost_usd × POINTS_PER_USD × 成员倍率)` —— 原子条件更新，并发扣减
-不可能透支。钱包不足时该请求回落到 tier 月度配额（后付费，行上 `points =
-NULL`）。**两者都耗尽**时 REST 门以 **402 Payment Required**
+不可能透支。钱包不足以覆盖本次扣费时，其余额会被**全额扣至零**（账本记一条
+`consume_shortfall` 条目说明差额，usage 行携带实际扣除的积分），差额部分回落到
+tier 月度配额（后付费）。因此当 tier 配额也耗尽时，下一次请求会立即被拒绝，而不是
+靠残留的零头余额长期续命。**两者都耗尽**时 REST 门以 **402 Payment Required**
 （`insufficient_credits` / `payment_required`，`Retry-After` 至月底）拒绝；
 RPC 路径保持 `-32006` `QUOTA_ERROR` 形状。
 

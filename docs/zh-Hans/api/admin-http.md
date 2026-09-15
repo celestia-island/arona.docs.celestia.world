@@ -283,11 +283,12 @@ curl -X POST http://192.0.2.10:8080/api/admin/usage/query \
 
 说明：
 
-- `cost_usd` 是 `SUM(cost)`，忽略 `NULL` cost（未定价模型的行和零 token 的
-  realtime 行贡献 `0`）。
+- `cost_usd` 是 `SUM(cost)`，忽略 `NULL` cost——现在每笔被计量的请求都会写入
+  成本（没有定价行的模型按计费指南中的回退费率计费，零 token 的行成本为 `0`），
+  因此 `NULL` 只残留在改动之前写入的行上。
 - 全局查询按 `ref` 分组时，无引用行的桶为 `"key": null`。
 - 带 `ref_id` 启动的 realtime 会话即使引擎上报零 token 也写 usage 行（本地
-  CEP 语音引擎）——这些行显示 `0` token 和 `null` cost。
+  CEP 语音引擎）——这些行显示 `0` token 和 `0` cost。
 - 畸形的 `since`/`until` → `400` `bad_since` / `bad_until`；未知
   `group_by` → `400` `bad_group_by`；数据库故障 → `500` `internal_error`
   （详情在服务端日志）。

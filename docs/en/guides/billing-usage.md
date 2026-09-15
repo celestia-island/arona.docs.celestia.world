@@ -18,13 +18,14 @@ Every metered request ends up as one row in the `usage_records` table
 | Column | Type | Meaning |
 | --- | --- | --- |
 | `id` | `UUID` | Primary key, generated. |
-| `api_key_id` | `VARCHAR(64)` | The **key prefix** — the first 8 characters of the API key (keys look like `arona-{uuid}`) — or a synthetic `jwt-<user-uuid>` id for JWT-attributed RPC channels. |
+| `api_key_id` | `VARCHAR(64)` | The **masked key id** — the first 8 characters of the API key, an ellipsis, its last 4 (keys look like `arona-{uuid}`) — or a synthetic `jwt-<user-uuid>` id for JWT-attributed RPC channels. Display only: attribution uses `api_key_row_id` below. |
+| `api_key_row_id` | `UUID` | The `api_keys` row the request was authenticated with. Quota and usage queries join on it; rows written before the column existed carry `NULL` and fall back to the 8-character `api_key_id` match, which buckets 256 keys together. |
 | `model` | `VARCHAR(128)` | Model id the request was routed to. |
 | `backend` | `VARCHAR(64)` | Backend kind: `gateway`, `rpc`, `realtime`, or the backend capability name. |
 | `prompt_tokens` | `INTEGER` | Input tokens, upstream-reported or estimated. |
 | `completion_tokens` | `INTEGER` | Output tokens, upstream-reported or estimated. |
 | `total_tokens` | `INTEGER` | Sum of the two. |
-| `cost` | `DOUBLE PRECISION` | Computed USD cost; `NULL` when the model has no pricing row. |
+| `cost` | `DOUBLE PRECISION` | Computed USD cost; never `NULL` for a metered request (a model with no pricing row is billed at the fallback rate below). |
 | `created_at` | `TIMESTAMPTZ` | When the request completed. |
 
 Indexes exist on `api_key_id`, `model` and `created_at` (the columns the
@@ -35,13 +36,20 @@ monthly aggregation and rate-limit windows scan).
 Usage is recorded on every metered channel:
 
 1. **REST non-streaming** — `POST /v1/chat/completions` and
-   `POST /v1/embeddings` record the exact upstream-reported usage once the
-   response has been produced.
+   `POST /v1/embeddings` record the upstream-reported usage once the response
+   has been produced. A backend that reports nothing usable is estimated
+   locally instead: the shipped self-hosted backends answer `0/0/0` rather
+   than omitting `usage`, and a report like that must not bill the request at
+   exactly zero.
 2. **REST streaming (SSE)** — the upstream-reported usage wins when the
    stream carried it (OpenAI-compatible terminal chunk `usage` field);
-   otherwise a local CJK-aware tokenizer estimate (`estimate_usage`) is
-   recorded as-is. Streams that produced neither text nor usage are **not**
-   recorded at all.
+   otherwise — including when it reports `0/0/0` — a local CJK-aware
+   tokenizer estimate (`estimate_usage`) is recorded as-is. A stream that ends
+   without a clean finish — the upstream
+   errored mid-stream, or the client disconnected and dropped the response
+   body — is billed the same way for whatever was generated before it
+   stopped, through a billing guard owned by the response body. Only a
+   stream that produced neither text nor usage is **not** recorded at all.
 3. **RPC `chat.send`** — the same estimate-vs-upstream logic applies; rows
    are attributed with the synthetic `jwt-<user-uuid>` id so they join back
    to the user.
@@ -66,8 +74,15 @@ cost = prompt_tokens / 1_000_000 * input_price
 ```
 
 Model matching in the table is substring-based on the lowercased model id
-(more specific families win). When a model has no pricing row, `cost` is
-`NULL`. **Do not reimplement pricing in arona — update plana's table.**
+(more specific families win). A model with **no pricing row is not free**:
+arona charges plana's own fallback estimate
+(`plana_llm_provider::metering::estimate_cost`, provider-keyed, generic arm
+`3.00` / `15.00` USD per 1M input / output tokens), logs a warning naming
+that model once per process, and counts the resulting cost toward the
+quota. This is what keeps the self-hosted quick-start models and the
+embedding families from writing `NULL`-cost rows that consume nothing (on a
+tier with no quota, that used to be free forever). **Do not reimplement
+pricing in arona — add the missing row to plana's table.**
 
 ## Tiers
 
@@ -135,9 +150,13 @@ every metered request tries to deduct
 `round(cost_usd × POINTS_PER_USD × member_multiplier)` from the drawing
 account (the group pool for group keys, the personal wallet otherwise) —
 atomic conditional updates, so concurrent deductions can never overdraw.
-When the wallet cannot cover the amount the request rides the tier
-monthly quota as before (postpaid, `points = NULL` on the row). When BOTH
-are drained the REST gate answers **402 Payment Required**
+When the wallet cannot cover the charge its whole remaining balance is
+debited: the wallet is **clamped to zero** (the ledger records a
+`consume_shortfall` entry with the gap, the usage row carries the points
+actually debited) and the rest of the charge rides the tier monthly quota
+(postpaid). The next request is therefore refused as soon as the tier quota
+is exhausted too, instead of riding a leftover sub-charge balance forever.
+When BOTH are drained the REST gate answers **402 Payment Required**
 (`insufficient_credits` / `payment_required`, `Retry-After` until month
 end); the RPC path keeps the `-32006` `QUOTA_ERROR` shape.
 
