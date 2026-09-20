@@ -35,13 +35,13 @@ organization apart from the repository name and licence class.
 | 3 | product logic | core team only; prior design discussion required |
 | 4 | security-critical surfaces (auth/RBAC, transport, hardware command path, billing, safety) | core team only, explicit invitation, extended review |
 
-## Sign-off (DCO)
+## CLA
 
-Every commit must carry a `Signed-off-by: Your Name <you@example.com>` line
-(`git commit -s`). The sign-off is a
-[Developer Certificate of Origin](https://developercertificate.org/) statement: you
-confirm you have the right to submit the contribution under this repository's
-licence. **There is no separate CLA to sign for this repository.**
+Every accepted contribution requires a signed Contributor License Agreement — see
+[`CLA.md`](CLA.md). Signing is a **one-time action per contributor**
+(and per employer, when contributing on behalf of a company). Add a
+`Signed-off-by: Your Name <you@example.com>` line to each commit (`git commit -s`);
+the sign-off is your electronic acceptance of the CLA.
 
 ## Security
 
@@ -68,11 +68,19 @@ see [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ## Licence
 
-arona.docs.celestia.world is licensed under the **Creative Commons Zero 1.0 Universal** — see [`LICENSE`](LICENSE).
+arona.docs.celestia.world is licensed under the **Business Source License 1.1** (see [`LICENSE`](LICENSE)). The Change Date is **2030-01-01**: from that
+date the Licensed Work converts to the **Synthetic Source License 1.0 (SySL-1.0)**
+for all users and all uses, with no production-use restriction and no
+separate commercial licence required.
 
-SySL-1.0 grants a perpetual, worldwide, non-exclusive, royalty-free copyright and
-patent licence (Sections 3 and 4) and keeps only the disclosure obligations as
-synthetic copyleft (Section 8): it does not require you to publish source code.
+For internal operations the licence is already permissive today: the Additional Use
+Grant permits production use by any organization regardless of size or revenue
+(internal operations of companies, government agencies, public institutions,
+education and non-profit organizations), plus modification and contribution
+upstream. What requires a separate commercial licence until the Change Date is
+offering the Licensed Work to third parties as a hosted, managed or cloud service,
+reselling or rebranding it as a product, or making it the substantial source of
+value in a commercial offering to third parties.
 
 
 ## AI-generated contributions
@@ -88,6 +96,9 @@ that. Disclosure is a licence obligation, not a courtesy:
 
 State it in the commit message, and in a file header when the file is new. Never
 strip the existing disclosure notice from the root README.
+- **Contributor direction.** For AI-generated portions you confirm you directed,
+  selected and refined the output; where a jurisdiction does not recognise copyright
+  in AI output, the CLA grants operate as contractual covenants.
 
 ## Legal
 
