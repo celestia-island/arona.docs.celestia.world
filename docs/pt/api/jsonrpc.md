@@ -155,6 +155,7 @@ completo por trás desta legenda.
 | `group.models.list` | admin do grupo / plataforma | `group_id` | Linhas `{ allowed: [...], denied: [...] }` da lista de permissão do grupo. |
 | `group.models.allow` | admin do grupo / plataforma | `group_id`, `model_ids[]` | Permitir modelos (linhas de negação explícitas prevalecem). |
 | `group.models.deny` | admin do grupo / plataforma | `group_id`, `model_ids[]` | Negar modelos (a negação prevalece). |
+| `group.models.reorder` | admin do grupo / plataforma | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | admin de plataforma | `group_id`, `points`, `note?` | Creditar o fundo de pontos do grupo. Devolve o novo saldo. |
 | `group.credits.balance` | admin do grupo / plataforma | `group_id` | Saldo do fundo + entradas recentes do livro-razão. |
 | `group.credits.allocate` | admin do grupo / plataforma | `group_id`, `user_id` (e-mail), `points`, `note?` | Mover pontos atomicamente do fundo do grupo para a carteira pessoal de um membro (recusa total se o fundo for insuficiente). |

@@ -158,6 +158,7 @@ d'auth complet derrière cette légende.
 | `group.models.list` | admin du groupe / plateforme | `group_id` | Lignes `{ allowed: [...], denied: [...] }` de la liste autorisée du groupe. |
 | `group.models.allow` | admin du groupe / plateforme | `group_id`, `model_ids[]` | Autoriser des modèles (les lignes de refus explicites priment). |
 | `group.models.deny` | admin du groupe / plateforme | `group_id`, `model_ids[]` | Refuser des modèles (le refus prévaut). |
+| `group.models.reorder` | admin du groupe / plateforme | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | admin de plateforme | `group_id`, `points`, `note?` | Créditer le pool de points du groupe. Renvoie le nouveau solde. |
 | `group.credits.balance` | admin du groupe / plateforme | `group_id` | Solde du pool + écritures récentes du grand livre. |
 | `group.credits.allocate` | admin du groupe / plateforme | `group_id`, `user_id` (e-mail), `points`, `note?` | Déplacer atomiquement des points du pool du groupe vers le portefeuille personnel d'un membre (refus global si le pool est insuffisant). |

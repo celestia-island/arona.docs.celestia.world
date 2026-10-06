@@ -110,6 +110,7 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 | `group.models.list` | 그룹 admin / 플랫폼 | `group_id` | 그룹 허용 목록의 `{ allowed: [...], denied: [...] }` 행. |
 | `group.models.allow` | 그룹 admin / 플랫폼 | `group_id`, `model_ids[]` | 모델 허용(명시적 거부 행이 허용보다 우선). |
 | `group.models.deny` | 그룹 admin / 플랫폼 | `group_id`, `model_ids[]` | 모델 거부(거부 우선). |
+| `group.models.reorder` | 그룹 admin / 플랫폼 | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | 플랫폼 admin | `group_id`, `points`, `note?` | 그룹 포인트 풀 충전. 새 잔액을 반환합니다. |
 | `group.credits.balance` | 그룹 admin / 플랫폼 | `group_id` | 풀 잔액 + 최근 원장 항목. |
 | `group.credits.allocate` | 그룹 admin / 플랫폼 | `group_id`, `user_id`(이메일), `points`, `note?` | 그룹 풀에서 멤버 개인 지갑으로 포인트를 원자적으로 이동(풀 부족 시 전체 거부). |

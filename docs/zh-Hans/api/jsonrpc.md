@@ -7,7 +7,7 @@ description: "位于 /api/rpc 的 Arona 管理平面 JSON-RPC 2.0 API——通�
 
 ## Permission map (full RBAC)
 
-Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
+Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`, `storage.manage`, `storage.use`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
 
 | Method | Required permission |
 |---|---|
@@ -23,6 +23,8 @@ Authorization resolves exclusively from **group default permission sets ⊕ gran
 | group management (update/delete/members/invites/models) | `workspace.manage` (global, or pinned to the group), or the group's own business admin |
 | `group.credits.topup` | `credits.mint` (opaque) |
 | admin usage query (`/api/admin/usage/query`) | `usage.read.all` (opaque — part of the administrators baseline) |
+| `storage.buckets.create` / `storage.buckets.delete` / `storage.credentials.*` / `storage.usage.summary` | `storage.manage` (opaque — administrators baseline; minting a credential mints a scoped rustfs service account) |
+| `storage.buckets.list` / `storage.objects.presign` | `storage.use` (opaque — administrators baseline; cluster-scoped by design, per-owner bucket scoping is future work) |
 | REST backends CRUD | `provider.list` / `provider.create` / `provider.delete` |
 | REST aliases | `config.read` / `config.write` |
 | `ledger.self`, `auth.*`, chat/embeddings | authenticated (self-scope), no permission point |
@@ -165,6 +167,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | `group.models.list` | 组 admin / 平台 | `group_id` | 组白名单的 `{ allowed: [...], denied: [...] }` 行。 |
 | `group.models.allow` | 组 admin / 平台 | `group_id`、`model_ids[]` | 允许模型（显式 deny 行压倒 allow）。 |
 | `group.models.deny` | 组 admin / 平台 | `group_id`、`model_ids[]` | 拒绝模型（deny 优先）。 |
+| `group.models.reorder` | 组 admin / 平台 | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | 平台 admin | `group_id`、`points`、`note?` | 为组资金池充值。返回新余额。 |
 | `group.credits.balance` | 组 admin / 平台 | `group_id` | 资金池余额 + 近期流水。 |
 | `group.credits.allocate` | 组 admin / 平台 | `group_id`、`user_id`（邮箱）、`points`、`note?` | 原子地将积分从组池转入成员个人钱包（池不足整笔拒绝）。 |

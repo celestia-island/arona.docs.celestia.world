@@ -109,6 +109,7 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 | `group.models.list` | グループ admin / プラットフォーム | `group_id` | グループ許可リストの `{ allowed: [...], denied: [...] }` 行。 |
 | `group.models.allow` | グループ admin / プラットフォーム | `group_id`、`model_ids[]` | モデルを許可（明示的な拒否行が許可に優先）。 |
 | `group.models.deny` | グループ admin / プラットフォーム | `group_id`、`model_ids[]` | モデルを拒否（拒否優先）。 |
+| `group.models.reorder` | グループ admin / プラットフォーム | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | プラットフォーム admin | `group_id`、`points`、`note?` | グループのポイントプールに入金。新しい残高を返します。 |
 | `group.credits.balance` | グループ admin / プラットフォーム | `group_id` | プール残高 + 最近の台帳エントリ。 |
 | `group.credits.allocate` | グループ admin / プラットフォーム | `group_id`、`user_id`（メール）、`points`、`note?` | グループプールからメンバーの個人ウォレットへポイントを原子的に移動（プール不足時は全体拒否）。 |

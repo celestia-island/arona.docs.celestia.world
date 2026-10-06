@@ -7,7 +7,7 @@ description: "Arona management-plane JSON-RPC 2.0 API at /api/rpc — chat, real
 
 ## Permission map (full RBAC)
 
-Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
+Authorization resolves exclusively from **group default permission sets ⊕ grants** (`rbac_groups` / `rbac_user_groups` / `rbac_grants`). The built-in `administrators` group's default set is the entire kirino permission catalog plus the opaque extras (`credits.mint`, `usage.read.all`, `storage.manage`, `storage.use`) — an "admin" passes because those RBAC permissions are forcibly enabled for the group, not via any boolean. `operators` drop the `system` domain / `rbac.manage` / the opaque extras; `registered` keeps the self-service slice (own-account API keys, read/list, provider use).
 
 | Method | Required permission |
 |---|---|
@@ -23,6 +23,8 @@ Authorization resolves exclusively from **group default permission sets ⊕ gran
 | group management (update/delete/members/invites/models) | `workspace.manage` (global, or pinned to the group), or the group's own business admin |
 | `group.credits.topup` | `credits.mint` (opaque) |
 | admin usage query (`/api/admin/usage/query`) | `usage.read.all` (opaque — part of the administrators baseline) |
+| `storage.buckets.create` / `storage.buckets.delete` / `storage.credentials.*` / `storage.usage.summary` | `storage.manage` (opaque — administrators baseline; minting a credential mints a scoped rustfs service account) |
+| `storage.buckets.list` / `storage.objects.presign` | `storage.use` (opaque — administrators baseline; cluster-scoped by design, per-owner bucket scoping is future work) |
 | REST backends CRUD | `provider.list` / `provider.create` / `provider.delete` |
 | REST aliases | `config.read` / `config.write` |
 | `ledger.self`, `auth.*`, chat/embeddings | authenticated (self-scope), no permission point |
@@ -180,6 +182,7 @@ model behind this legend.
 | `group.models.list` | group admin / platform | `group_id` | `{ allowed: [...], denied: [...] }` rows of the group allowlist. |
 | `group.models.allow` | group admin / platform | `group_id`, `model_ids[]` | Allow models (explicit deny rows win over allow). |
 | `group.models.deny` | group admin / platform | `group_id`, `model_ids[]` | Deny models (deny-override). |
+| `group.models.reorder` | group admin / platform | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | platform admin | `group_id`, `points`, `note?` | Credit the group points pool. Returns the new balance. |
 | `group.credits.balance` | group admin / platform | `group_id` | Pool balance + recent ledger entries. |
 | `group.credits.allocate` | group admin / platform | `group_id`, `user_id` (email), `points`, `note?` | Atomically move points from the group pool into a member's personal wallet (refused whole on a short pool). |

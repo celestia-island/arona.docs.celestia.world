@@ -143,6 +143,7 @@ keys）。此圖例背後的完整 auth 模型見
 | `group.models.list` | 群組 admin / 平台 | `group_id` | 群組白名單的 `{ allowed: [...], denied: [...] }` 列。 |
 | `group.models.allow` | 群組 admin / 平台 | `group_id`、`model_ids[]` | 允許模型（明確 deny 列壓倒 allow）。 |
 | `group.models.deny` | 群組 admin / 平台 | `group_id`、`model_ids[]` | 拒絕模型（deny 優先）。 |
+| `group.models.reorder` | 群組 admin / 平台 | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | 平台 admin | `group_id`、`points`、`note?` | 為群組資金池充值。回傳新餘額。 |
 | `group.credits.balance` | 群組 admin / 平台 | `group_id` | 資金池餘額 + 近期流水。 |
 | `group.credits.allocate` | 群組 admin / 平台 | `group_id`、`user_id`（郵箱）、`points`、`note?` | 原子地將點數從群組池轉入成員個人錢包（池不足整筆拒絕）。 |

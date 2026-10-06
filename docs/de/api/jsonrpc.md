@@ -159,6 +159,7 @@ hinter dieser Legende finden Sie unter
 | `group.models.list` | Gruppen-Admin / Plattform | `group_id` | `{ allowed: [...], denied: [...] }` Zeilen der Gruppen-Allowlist. |
 | `group.models.allow` | Gruppen-Admin / Plattform | `group_id`, `model_ids[]` | Modelle erlauben (explizite Deny-Zeilen schlagen Allow). |
 | `group.models.deny` | Gruppen-Admin / Plattform | `group_id`, `model_ids[]` | Modelle ablehnen (Deny übersteuert). |
+| `group.models.reorder` | Gruppen-Admin / Plattform | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | Plattform-Admin | `group_id`, `points`, `note?` | Gruppen-Punktpool aufladen. Gibt den neuen Saldo zurück. |
 | `group.credits.balance` | Gruppen-Admin / Plattform | `group_id` | Pool-Saldo + letzte Ledger-Einträge. |
 | `group.credits.allocate` | Gruppen-Admin / Plattform | `group_id`, `user_id` (E-Mail), `points`, `note?` | Punkte atomar vom Gruppenpool in die persönliche Wallet eines Mitglieds verschieben (bei leerem Pool ganze Ablehnung). |

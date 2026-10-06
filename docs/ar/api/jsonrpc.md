@@ -115,6 +115,7 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 | `group.models.list` | admin المجموعة / المنصة | `group_id` | صفوف `{ allowed: [...], denied: [...] }` لقائمة سماح المجموعة. |
 | `group.models.allow` | admin المجموعة / المنصة | `group_id`، `model_ids[]` | السماح بالنماذج (صفوف المنع الصريح تتفوق على السماح). |
 | `group.models.deny` | admin المجموعة / المنصة | `group_id`، `model_ids[]` | منع النماذج (المنع له الأولوية). |
+| `group.models.reorder` | admin المجموعة / المنصة | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
 | `group.credits.topup` | admin المنصة | `group_id`، `points`، `note?` | شحن مجمع نقاط المجموعة. يعيد الرصيد الجديد. |
 | `group.credits.balance` | admin المجموعة / المنصة | `group_id` | رصيد المجمع + إدخالات السجل الأخيرة. |
 | `group.credits.allocate` | admin المجموعة / المنصة | `group_id`، `user_id` (بريد)، `points`، `note?` | نقل النقاط ذريًا من مجمع المجموعة إلى محفظة عضو الشخصية (رفض كامل عند نقص المجمع). |
