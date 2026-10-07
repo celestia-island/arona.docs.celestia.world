@@ -154,7 +154,7 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 | `group.models.list` | admin группы / платформа | `group_id` | Строки `{ allowed: [...], denied: [...] }` списка разрешений группы. |
 | `group.models.allow` | admin группы / платформа | `group_id`, `model_ids[]` | Разрешить модели (явные строки запрета важнее разрешений). |
 | `group.models.deny` | admin группы / платформа | `group_id`, `model_ids[]` | Запретить модели (запрет имеет приоритет). |
-| `group.models.reorder` | admin группы / платформа | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
+| `group.models.reorder` | админ группы / платформа | `group_id`, `model_ids[]` | Переупорядочивает строки доступа к моделям группы (полный порядок списка становится последовательностью позиций). |
 | `group.credits.topup` | admin платформы | `group_id`, `points`, `note?` | Пополнить пул очков группы. Возвращает новый баланс. |
 | `group.credits.balance` | admin группы / платформа | `group_id` | Баланс пула + последние записи реестра. |
 | `group.credits.allocate` | admin группы / платформа | `group_id`, `user_id` (email), `points`, `note?` | Атомарно перевести очки из пула группы в личный кошелёк участника (при нехватке пула — полный отказ). |

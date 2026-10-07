@@ -157,7 +157,7 @@ completo detrás de esta leyenda.
 | `group.models.list` | admin del grupo / plataforma | `group_id` | Filas `{ allowed: [...], denied: [...] }` de la lista de permitidos del grupo. |
 | `group.models.allow` | admin del grupo / plataforma | `group_id`, `model_ids[]` | Permitir modelos (las filas de denegación explícitas ganan). |
 | `group.models.deny` | admin del grupo / plataforma | `group_id`, `model_ids[]` | Denegar modelos (la denegación prevalece). |
-| `group.models.reorder` | admin del grupo / plataforma | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
+| `group.models.reorder` | admin de grupo / plataforma | `group_id`, `model_ids[]` | Reordena las filas de acceso a modelos del grupo (el orden completo de la lista se convierte en la secuencia de posiciones). |
 | `group.credits.topup` | admin de plataforma | `group_id`, `points`, `note?` | Acreditar el fondo de puntos del grupo. Devuelve el nuevo saldo. |
 | `group.credits.balance` | admin del grupo / plataforma | `group_id` | Saldo del fondo + entradas recientes del libro mayor. |
 | `group.credits.allocate` | admin del grupo / plataforma | `group_id`, `user_id` (correo), `points`, `note?` | Mover puntos atómicamente del fondo del grupo a la cartera personal de un miembro (rechazo total si el fondo es insuficiente). |

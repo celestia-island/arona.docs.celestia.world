@@ -167,7 +167,7 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 | `group.models.list` | 组 admin / 平台 | `group_id` | 组白名单的 `{ allowed: [...], denied: [...] }` 行。 |
 | `group.models.allow` | 组 admin / 平台 | `group_id`、`model_ids[]` | 允许模型（显式 deny 行压倒 allow）。 |
 | `group.models.deny` | 组 admin / 平台 | `group_id`、`model_ids[]` | 拒绝模型（deny 优先）。 |
-| `group.models.reorder` | 组 admin / 平台 | `group_id`, `model_ids[]` | Reorder the group model-access rows (the full list order becomes the position sequence). |
+| `group.models.reorder` | 组 admin / 平台 | `group_id`、`model_ids[]` | 重排群组模型访问行（完整列表顺序即位置序列）。 |
 | `group.credits.topup` | 平台 admin | `group_id`、`points`、`note?` | 为组资金池充值。返回新余额。 |
 | `group.credits.balance` | 组 admin / 平台 | `group_id` | 资金池余额 + 近期流水。 |
 | `group.credits.allocate` | 组 admin / 平台 | `group_id`、`user_id`（邮箱）、`points`、`note?` | 原子地将积分从组池转入成员个人钱包（池不足整笔拒绝）。 |
