@@ -17,7 +17,7 @@ description: "نقاط نهاية الصحة، ومراقبة RUST_LOG، ومه�
 | `/v1/health` | نفس جسم plana `HealthResponse` |
 | `/api/health` | نفس جسم plana `HealthResponse` |
 
-كل واحد من هذه المسارات يخدم نفس plana `HealthResponse`: `status`، `version` (`CARGO_PKG_VERSION`)، `kind`، `uptime` (بالثواني)، `network` (transport / region / asn)، `build_hash` و`engine_version`. `/healthz` و`/readyz` اسمان مستعاران لنفس المعالج، ويشاركهما `/v1/health` و`/api/health`، لذا فإن الـ probes بأسلوب Kubernetes ومسار الصحة المتوافق مع OpenAI قابلان للتبادل فعلًا. يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك)، و`build_hash` هو مراجعة git القصيرة التي بُني منها الملف التنفيذي، و`engine_version` هو `null` — فـ arona تجدول خوادم نماذج خارجية وليس لديها محرك خاص بها يمكنها الإبلاغ عن إصداره بصدق. استخدم `/readyz` لموازنات الحمل والمشرفين.
+كل واحد من هذه المسارات يخدم نفس plana `HealthResponse`: `status`، `version` (خط الإصدار git العائلي)، `kind`، `uptime` (بالثواني)، `network` (transport / region / asn)، `build_hash` و`engine_version`. `/healthz` و`/readyz` اسمان مستعاران لنفس المعالج، ويشاركهما `/v1/health` و`/api/health`، لذا فإن الـ probes بأسلوب Kubernetes ومسار الصحة المتوافق مع OpenAI قابلان للتبادل فعلًا. يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك)، و`build_hash` هو مراجعة git القصيرة التي بُني منها الملف التنفيذي، و`engine_version` هو `null` — فـ arona تجدول خوادم نماذج خارجية وليس لديها محرك خاص بها يمكنها الإبلاغ عن إصداره بصدق. استخدم `/readyz` لموازنات الحمل والمشرفين.
 
 ## التسجيل
 
@@ -77,7 +77,7 @@ description: "نقاط نهاية الصحة، ومراقبة RUST_LOG، ومه�
 
 ### الإبلاغ عن الإصدار
 
-`version` في أجسام الصحة هو `CARGO_PKG_VERSION`؛ و`build_hash` هو مراجعة git القصيرة الملتقطة وقت البناء بواسطة crate البناء المشترك في plana (`plana_build_info::emit_build_hash`، المُستدعاة من `packages/core/build.rs`)، لذا لا تتغير إلا عندما يتغير المصدر — مع لاحقة `-dirty` عندما كانت الشجرة تحمل تغييرات غير مُودَعة، و`unknown` عندما لا تحمل المصادر بيانات وصفية لـ git. يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك). قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
+`version` في أجسام الصحة هو خط الإصدار العائلي (`<base> <branch>::<hash7>`)، يحسبه سكربت البناء الخاص بهذه الحزمة — أولاً `celestia-devtools version-string` مع تراجع مباشر إلى `git rev-parse`. و`build_hash` هو النصف `hash7` من الخط نفسه، لذا لا يتغير إلا عندما يتغير المصدر، ويكون `unknown` عندما لا تحمل المصادر بيانات وصفية لـ git (منشأة `BUILD_HASH` في plana المستبعدة كانت تجيب بتجزئة مختلفة عن الواجهة المنشورة). يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك). قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

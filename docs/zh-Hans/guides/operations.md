@@ -21,7 +21,7 @@ readiness 之分：
 | `/api/health` | 相同的 plana `HealthResponse` 响应体 |
 
 这些路由都提供同一份 plana `HealthResponse`：`status`、`version`
-（`CARGO_PKG_VERSION`）、`kind`、`uptime`（秒）、`network`（transport /
+（家族 git 版本线）、`kind`、`uptime`（秒）、`network`（transport /
 region / asn）、`build_hash` 与 `engine_version`。`/healthz` 和 `/readyz` 是
 同一处理器的别名，`/v1/health` 和 `/api/health` 与之共享，因此 Kubernetes
 风格的 probe 与 OpenAI 兼容的健康路由真正可以互换。`kind` 跟随构建 profile
@@ -104,12 +104,7 @@ GLM 编程方案端点就是其中之一。**404 被容忍**：backend 被标记
 
 ### 版本上报
 
-健康响应体中的 `version` 是 `CARGO_PKG_VERSION`；`build_hash` 是 plana 共享的
-build-info crate 在构建时捕获的短 git 修订号（`plana_build_info::emit_build_hash`，
-由 `packages/core/build.rs` 调用），因此只在源码变化时才改变——工作树有未提交
-改动时带 `-dirty` 后缀，源码不含 git 元数据时为 `unknown`。`kind` 跟随构建
-profile（debug 构建为 `dev`，否则为 `prod`）。跨节点比较 `build_hash` 可确认
-它们运行的是同一产物。
+健康体中的 `version` 是家族版本线（`<base> <branch>::<hash7>`），由本包自己的构建脚本计算（优先 `celestia-devtools version-string`，失败时回退直接 `git rev-parse`）。`build_hash` 是同一版本线的 `hash7` 半段，只在源码变化时才变，源码无 git 元数据时为 `unknown`（已退役的 plana `BUILD_HASH` 设施给出的哈希与部署前端不一致）。`kind` 跟随构建 profile（调试构建为 `dev`，否则为 `prod`）。跨节点比较 `build_hash` 以确认运行的是同一构件。
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

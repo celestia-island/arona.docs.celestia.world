@@ -23,7 +23,7 @@ the process is serving — there is no liveness/readiness distinction:
 | `/api/health` | the same plana `HealthResponse` body |
 
 Every one of these routes serves the same plana `HealthResponse`: `status`,
-`version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (seconds), `network`
+`version` (the family git version line), `kind`, `uptime` (seconds), `network`
 (transport / region / asn), `build_hash` and `engine_version`. `/healthz` and
 `/readyz` are aliases of the same handler, and `/v1/health` and `/api/health`
 share it, so the Kubernetes-style probes and the OpenAI-compatible health
@@ -114,13 +114,7 @@ line, check whether the stream actually produced content.
 
 ### Version reporting
 
-`version` in the health bodies is `CARGO_PKG_VERSION`; `build_hash` is the
-short git revision captured at build time by plana's shared build-info crate
-(`plana_build_info::emit_build_hash`, called from `packages/core/build.rs`), so
-it changes only when the source does — suffixed `-dirty` when the tree had
-uncommitted changes and `unknown` when the sources carry no git metadata.
-`kind` follows the build profile (`dev` for a debug build, `prod` otherwise).
-Compare `build_hash` across nodes to confirm they all run the same artifact.
+`version` in the health bodies is the family version line (`<base> <branch>::<hash7>`), computed by this package's own build script — `celestia-devtools version-string` first, with a direct `git rev-parse` fallback. `build_hash` is the `hash7` half of that same line, so it changes only when the source does, and reads `unknown` when the sources carry no git metadata (the retired plana `BUILD_HASH` facility answered a different hash than the deployed frontend). `kind` follows the build profile (`dev` for a debug build, `prod` otherwise). Compare `build_hash` across nodes to confirm they all run the same artifact.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

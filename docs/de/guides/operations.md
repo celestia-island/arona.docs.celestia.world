@@ -25,7 +25,7 @@ Unterscheidung:
 | `/api/health` | derselbe plana `HealthResponse`-Body |
 
 Jeder dieser Pfade liefert dieselbe plana `HealthResponse`: `status`,
-`version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (Sekunden), `network`
+`version` (die Familien-Git-Versionszeile), `kind`, `uptime` (Sekunden), `network`
 (transport / region / asn), `build_hash` und `engine_version`. `/healthz` und
 `/readyz` sind Aliase desselben Handlers, und `/v1/health` und `/api/health`
 teilen ihn, sodass die Kubernetes-artigen Probes und die OpenAI-kompatible
@@ -121,15 +121,7 @@ Inhalt erzeugt hat.
 
 ### Versionsmeldung
 
-`version` in den Health-Bodies ist `CARGO_PKG_VERSION`; `build_hash` ist die
-kurze Git-Revision, die zur Build-Zeit vom gemeinsamen Build-Info-Crate von
-plana erfasst wird (`plana_build_info::emit_build_hash`, aufgerufen aus
-`packages/core/build.rs`), sodass sie sich nur ändert, wenn sich die Quellen
-ändern — mit Suffix `-dirty`, wenn der Baum nicht committete Änderungen hatte,
-und `unknown`, wenn die Quellen keine Git-Metadaten tragen. `kind` folgt dem
-Build-Profil (`dev` für einen Debug-Build, sonst `prod`). Vergleichen Sie
-`build_hash` über die Knoten hinweg, um zu bestätigen, dass alle dasselbe
-Artefakt ausführen.
+`version` in den Health-Bodies ist die Familien-Versionszeile (`<base> <branch>::<hash7>`), die das eigene Build-Skript dieses Pakets berechnet — zuerst `celestia-devtools version-string`, mit direktem `git rev-parse`-Fallback. `build_hash` ist die `hash7`-Hälfte derselben Zeile, ändert sich also nur, wenn sich die Quellen ändern, und lautet `unknown`, wenn die Quellen keine Git-Metadaten tragen (die zurückgezogene plana-`BUILD_HASH`-Einrichtung antwortete mit einem anderen Hash als das eingesetzte Frontend). `kind` folgt dem Build-Profil (`dev` für einen Debug-Build, sonst `prod`). Vergleiche `build_hash` über Knoten hinweg, um zu bestätigen, dass alle dasselbe Artefakt ausführen.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

@@ -24,7 +24,7 @@ siempre que el proceso esté sirviendo — no hay distinción liveness/readiness
 | `/api/health` | el mismo cuerpo plana `HealthResponse` |
 
 Cada una de estas rutas sirve el mismo plana `HealthResponse`: `status`,
-`version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (segundos), `network`
+`version` (la línea de versión git de la familia), `kind`, `uptime` (segundos), `network`
 (transporte / región / asn), `build_hash` y `engine_version`. `/healthz` y
 `/readyz` son alias del mismo handler, y `/v1/health` y `/api/health` lo
 comparten, así que los probes estilo Kubernetes y la ruta de salud compatible
@@ -118,15 +118,7 @@ recorded` correspondiente, compruebe si el stream produjo contenido realmente.
 
 ### Informe de versión
 
-`version` en los cuerpos de salud es `CARGO_PKG_VERSION`; `build_hash` es la
-revisión corta de git capturada en tiempo de compilación por el crate compartido
-de información de compilación de plana (`plana_build_info::emit_build_hash`,
-invocado desde `packages/core/build.rs`), así que solo cambia cuando cambian las
-fuentes — con sufijo `-dirty` cuando el árbol tenía cambios sin confirmar y
-`unknown` cuando las fuentes no llevan metadatos de git. `kind` sigue el perfil
-de compilación (`dev` para una compilación debug, `prod` en caso contrario).
-Compare `build_hash` entre nodos para confirmar que todos ejecutan el mismo
-artefacto.
+`version` en los cuerpos de salud es la línea de versión de la familia (`<base> <branch>::<hash7>`), calculada por el propio script de compilación de este paquete — primero `celestia-devtools version-string`, con un repliegue directo a `git rev-parse`. `build_hash` es la mitad `hash7` de esa misma línea, así que solo cambia cuando cambia el código fuente, y vale `unknown` cuando las fuentes no llevan metadatos de git (la facilidad `BUILD_HASH` de plana, ya retirada, respondía con un hash distinto al del frontend desplegado). `kind` sigue el perfil de compilación (`dev` para una compilación de depuración, `prod` en caso contrario). Compara `build_hash` entre nodos para confirmar que todos ejecutan el mismo artefacto.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

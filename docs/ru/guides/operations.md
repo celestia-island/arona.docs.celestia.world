@@ -23,7 +23,7 @@ health-endpoints, которые вы пробируете, строки лог�
 | `/api/health` | то же тело plana `HealthResponse` |
 
 Каждый из этих маршрутов отдаёт один и тот же plana `HealthResponse`:
-`status`, `version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (секунды),
+`status`, `version` (семейная git-строка версии), `kind`, `uptime` (секунды),
 `network` (transport / region / asn), `build_hash` и `engine_version`.
 `/healthz` и `/readyz` — алиасы одного обработчика, и `/v1/health` и
 `/api/health` разделяют его, поэтому Kubernetes-пробы и OpenAI-совместимый
@@ -116,14 +116,7 @@ Streaming-ответ записывается в usage только когда �
 
 ### Сообщение версии
 
-`version` в health-телах — это `CARGO_PKG_VERSION`; `build_hash` — короткая
-git-ревизия, захваченная во время сборки общим build-info crate plana
-(`plana_build_info::emit_build_hash`, вызывается из `packages/core/build.rs`),
-поэтому она меняется только тогда, когда меняются исходники — с суффиксом
-`-dirty`, если в дереве были незакоммиченные изменения, и `unknown`, если
-исходники не несут git-метаданных. `kind` следует профилю сборки (`dev` для
-debug-сборки, иначе `prod`). Сравнивайте `build_hash` между узлами, чтобы
-подтвердить, что все они запускают один и тот же артефакт.
+`version` в телах health — это семейная строка версии (`<base> <branch>::<hash7>`), которую вычисляет собственный build-скрипт этого пакета — сначала `celestia-devtools version-string`, с прямым откатом к `git rev-parse`. `build_hash` — это половина `hash7` той же строки, поэтому меняется только при изменении исходников, и равна `unknown`, если исходники не несут метаданных git (выведенный из строя механизм plana `BUILD_HASH` отвечал хэшем, отличавшимся от развёрнутого фронтенда). `kind` следует профилю сборки (`dev` для отладочной, иначе `prod`). Сравнивайте `build_hash` между узлами, чтобы подтвердить, что все выполняют один и тот же артефакт.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

@@ -25,7 +25,7 @@ liveness/readiness :
 | `/api/health` | le même corps plana `HealthResponse` |
 
 Chacune de ces routes sert le même plana `HealthResponse` : `status`,
-`version` (`CARGO_PKG_VERSION`), `kind`, `uptime` (secondes), `network`
+`version` (la ligne de version git de la famille), `kind`, `uptime` (secondes), `network`
 (transport / region / asn), `build_hash` et `engine_version`. `/healthz` et
 `/readyz` sont des alias du même handler, et `/v1/health` et `/api/health` le
 partagent, donc les sondes de style Kubernetes et la route de santé compatible
@@ -121,15 +121,7 @@ produit du contenu.
 
 ### Rapport de version
 
-`version` dans les corps de santé est `CARGO_PKG_VERSION` ; `build_hash` est la
-révision courte git capturée au moment de la compilation par le crate partagé
-d'informations de compilation de plana (`plana_build_info::emit_build_hash`,
-appelé depuis `packages/core/build.rs`), donc il ne change que lorsque les
-sources changent — suffixé `-dirty` quand l'arbre avait des modifications non
-commit, et `unknown` quand les sources ne portent aucune métadonnée git. `kind`
-suit le profil de compilation (`dev` pour une compilation debug, `prod` sinon).
-Comparez `build_hash` entre les nœuds pour confirmer qu'ils exécutent tous le
-même artefact.
+`version` dans les corps de santé est la ligne de version de la famille (`<base> <branch>::<hash7>`), calculée par le script de construction propre à ce paquet — d'abord `celestia-devtools version-string`, avec un repli direct sur `git rev-parse`. `build_hash` est la moitié `hash7` de cette même ligne, donc il ne change que lorsque la source change, et vaut `unknown` lorsque les sources ne portent pas de métadonnées git (l'installation `BUILD_HASH` de plana, retirée, répondait par un hachage différent de celui du frontend déployé). `kind` suit le profil de construction (`dev` pour un build de débogage, `prod` sinon). Comparez `build_hash` entre les nœuds pour confirmer qu'ils exécutent tous le même artefact.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

@@ -17,7 +17,7 @@ description: "실행 중인 arona-server를 위한 health 엔드포인트, RUST_
 | `/v1/health` | 같은 plana `HealthResponse` 본문 |
 | `/api/health` | 같은 plana `HealthResponse` 본문 |
 
-이 라우트들은 모두 같은 plana `HealthResponse`를 제공합니다: `status`, `version`(`CARGO_PKG_VERSION`), `kind`, `uptime`(초), `network`(transport / region / asn), `build_hash`, `engine_version`. `/healthz`와 `/readyz`는 같은 핸들러의 별칭이고, `/v1/health`와 `/api/health`도 이를 공유하므로, Kubernetes 스타일 probe와 OpenAI 호환 health 라우트는 실제로 상호 교환 가능합니다. `kind`는 빌드 프로파일을 따르며(디버그 빌드면 `dev`, 그 외에는 `prod`), `build_hash`는 바이너리를 빌드한 짧은 git 리비전이고, `engine_version`은 `null`입니다 — arona는 외부 모델 서버를 스케줄하며, 버전을 정직하게 보고할 자체 엔진이 없습니다. 로드 밸런서와 슈퍼바이저에는 `/readyz`를 사용하세요.
+이 라우트들은 모두 같은 plana `HealthResponse`를 제공합니다: `status`, `version`(패밀리 git 버전 라인), `kind`, `uptime`(초), `network`(transport / region / asn), `build_hash`, `engine_version`. `/healthz`와 `/readyz`는 같은 핸들러의 별칭이고, `/v1/health`와 `/api/health`도 이를 공유하므로, Kubernetes 스타일 probe와 OpenAI 호환 health 라우트는 실제로 상호 교환 가능합니다. `kind`는 빌드 프로파일을 따르며(디버그 빌드면 `dev`, 그 외에는 `prod`), `build_hash`는 바이너리를 빌드한 짧은 git 리비전이고, `engine_version`은 `null`입니다 — arona는 외부 모델 서버를 스케줄하며, 버전을 정직하게 보고할 자체 엔진이 없습니다. 로드 밸런서와 슈퍼바이저에는 `/readyz`를 사용하세요.
 
 ## 로깅
 
@@ -77,7 +77,7 @@ External probe는 `GET {base}/v1/models`(경로 접두어가 있는 기본 URL�
 
 ### 버전 보고
 
-Health 본문의 `version`은 `CARGO_PKG_VERSION`이고, `build_hash`는 plana의 공유 build-info crate가 빌드 시점에 캡처하는 짧은 git 리비전(`plana_build_info::emit_build_hash`, `packages/core/build.rs`에서 호출)이므로 소스가 바뀔 때만 변합니다 — 커밋되지 않은 변경이 있는 트리에는 접미사 `-dirty`가 붙고, 소스에 git 메타데이터가 없으면 `unknown`입니다. `kind`는 빌드 프로파일을 따릅니다(디버그 빌드면 `dev`, 그 외에는 `prod`). 노드 간 `build_hash`를 비교하여 모두 동일한 아티팩트를 실행하는지 확인하세요.
+Health 본문의 `version`은 패밀리 버전 라인(`<base> <branch>::<hash7>`)으로, 이 패키지 자체 빌드 스크립트가 계산합니다(먼저 `celestia-devtools version-string`, 실패 시 `git rev-parse` 직접 폴백). `build_hash`는 같은 라인의 `hash7` 부분이므로 소스가 바뀔 때만 변하고, 소스에 git 메타데이터가 없으면 `unknown`입니다(은퇴한 plana `BUILD_HASH` 시설은 배포된 프런트엔드와 다른 해시를 답했습니다). `kind`는 빌드 프로파일을 따릅니다(디버그 빌드면 `dev`, 그 외에는 `prod`). 노드 간 `build_hash`를 비교하여 모두 동일한 아티팩트를 실행하는지 확인하세요.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
-<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (plana_build_info::emit_build_hash) -->
+<!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->
