@@ -49,7 +49,7 @@ Backends 是 gateway 後方可路由的 upstreams。註冊會讓 backend 立即�
 
 | 欄位 | 類型 | 備註 |
 | --- | --- | --- |
-| `type` | string | Backend 類型。`external`（任何 OpenAI 相容 HTTP API）、`ollama`（本機或遠端 ollama 伺服器）、`engine`（`ws://`／`wss://` 上的 CEP engine）、`minimax-cloud`（雲端視訊 API）之一。MDD engine 名稱（`llama_cpp`、`vllm`、`ollama`、`cloud`、`external_api`、`candle`、`native`、……）經由 planner 解析。`comfyui` **被拒絕**（`comfyui backend removed`）；其他任何值 → `400` `unknown_type`。缺失時預設 `ollama`。 |
+| `type` | string | Backend 類型。可選 `external`（任意 OpenAI 相容 HTTP API）、`ollama`（本地或遠端 ollama 服務）、`engine`（`ws://`/`wss://` 的 CEP engine）、`minimax-cloud`（雲端視訊 API）、`comfyui`（自架 ComfyUI 伺服器；需 `workflow`，2026-10-13 恢復）。MDD engine 名（`llama_cpp`、`vllm`、`ollama`、`cloud`、`external_api`、`candle`、`native` 等）經 planner 解析 —— `vllm` 與 `llama_cpp` 以**掛接模式**註冊到已在執行的 OpenAI 相容端點。其餘值 → `400` `unknown_type`。預設為 `ollama`。 |
 | `url` | string | Backend 基礎 URL。`evernight://<node>/<service>` bridge URLs 透過本機 evernight agent 解析為本機 TCP 轉發（解析失敗 → `502` `evernight_unreachable`）。預設 `http://localhost:11434`。 |
 | `api_key` | string | 選用的 upstream API key，在 upstream 呼叫上以 `Authorization: Bearer` 送出。 |
 | `name` | string | Backend 名稱。缺失時預設為 `type` 值。用作路由的 `provider` 提示與設定列身分。 |

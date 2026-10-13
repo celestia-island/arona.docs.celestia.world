@@ -77,7 +77,7 @@ description: "نقاط نهاية الصحة، ومراقبة RUST_LOG، ومه�
 
 ### الإبلاغ عن الإصدار
 
-`version` في أجسام الصحة هو خط الإصدار العائلي (`<base> <branch>::<hash7>`)، يحسبه سكربت البناء الخاص بهذه الحزمة — أولاً `celestia-devtools version-string` مع تراجع مباشر إلى `git rev-parse`. و`build_hash` هو النصف `hash7` من الخط نفسه، لذا لا يتغير إلا عندما يتغير المصدر، ويكون `unknown` عندما لا تحمل المصادر بيانات وصفية لـ git (منشأة `BUILD_HASH` في plana المستبعدة كانت تجيب بتجزئة مختلفة عن الواجهة المنشورة). يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك). قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
+`version` في أجسام الصحة هو خط الإصدار العائلي (`<base> <branch>:<hash7>`)، يحسبه سكربت البناء الخاص بهذه الحزمة — أولاً `celestia-devtools version-string` مع تراجع مباشر إلى `git rev-parse`. و`build_hash` هو النصف `hash7` من الخط نفسه، لذا لا يتغير إلا عندما يتغير المصدر، ويكون `unknown` عندما لا تحمل المصادر بيانات وصفية لـ git (منشأة `BUILD_HASH` في plana المستبعدة كانت تجيب بتجزئة مختلفة عن الواجهة المنشورة). يتبع `kind` ملف تعريف البناء (`dev` لبناء التنقيح، و`prod` فيما عدا ذلك). قارن `build_hash` عبر العقد للتأكد من أن جميعها تشغّل القطعة (artifact) نفسها.
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
 <!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

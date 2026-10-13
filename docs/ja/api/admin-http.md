@@ -41,7 +41,7 @@ Backend は gateway の背後にあるルーティング可能な upstream で�
 
 | フィールド | タイプ | メモ |
 | --- | --- | --- |
-| `type` | string | Backend の kind。`external`（任意の OpenAI 互換 HTTP API）、`ollama`（ローカルまたはリモートの ollama サーバー）、`engine`（`ws://`/`wss://` 上の CEP エンジン）、`minimax-cloud`（クラウドビデオ API）のいずれか。MDD エンジン名（`llama_cpp`、`vllm`、`ollama`、`cloud`、`external_api`、`candle`、`native`、...）はプランナーを通して解決されます。`comfyui` は**拒否**されます（`comfyui backend removed`）。それ以外は `400` `unknown_type`。欠落時は `ollama` がデフォルト。 |
+| `type` | string | Backend 種別。`external`（任意の OpenAI 互換 HTTP API）、`ollama`（ローカル/リモートの ollama サーバー）、`engine`（`ws://`/`wss://` の CEP engine）、`minimax-cloud`（クラウド動画 API）、`comfyui`（セルフホスト ComfyUI サーバー。`workflow` 必須、2026-10-13 復活）のいずれか。MDD engine 名（`llama_cpp`、`vllm`、`ollama`、`cloud`、`external_api`、`candle`、`native` など）は planner で解決され、`vllm` と `llama_cpp` は既に稼働中の OpenAI 互換エンドポイントに対する**アタッチモード**で登録されます。その他の値 → `400` `unknown_type`。省略時は `ollama`。 |
 | `url` | string | Backend のベース URL。`evernight://<node>/<service>` ブリッジ URL はローカル evernight agent 経由でローカル TCP フォワードに解決されます（解決失敗 → `502` `evernight_unreachable`）。欠落時は `http://localhost:11434` がデフォルト。 |
 | `api_key` | string | 任意の upstream API key。upstream 呼び出しで `Authorization: Bearer` として送信されます。 |
 | `name` | string | Backend 名。欠落時は `type` 値がデフォルト。ルーティングの `provider` ヒントと設定行のアイデンティティとして使用されます。 |

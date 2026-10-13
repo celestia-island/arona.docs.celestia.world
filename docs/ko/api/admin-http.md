@@ -41,7 +41,7 @@ Backend는 gateway 뒤의 라우팅 가능한 업스트림입니다. 등록은 b
 
 | 필드 | 유형 | 참고 |
 | --- | --- | --- |
-| `type` | string | Backend 종류. `external`(모든 OpenAI 호환 HTTP API), `ollama`(로컬 또는 원격 ollama 서버), `engine`(`ws://`/`wss://` 위의 CEP 엔진), `minimax-cloud`(클라우드 video API) 중 하나. MDD 엔진 이름(`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...)은 planner를 통해 해석됩니다. `comfyui`는 **거부**됩니다(`comfyui backend removed`). 그 외의 것은 `400` `unknown_type`. 누락 시 기본값 `ollama`. |
+| `type` | string | backend 유형. `external`(임의의 OpenAI 호환 HTTP API), `ollama`(로컬/원격 ollama 서버), `engine`(`ws://`/`wss://` CEP engine), `minimax-cloud`(클라우드 영상 API), `comfyui`(셀프 호스팅 ComfyUI 서버, `workflow` 필요, 2026-10-13 복원) 중 하나. MDD engine 이름(`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native` 등)은 planner로 해석되며, `vllm`과 `llama_cpp`는 이미 실행 중인 OpenAI 호환 엔드포인트에 **attach 모드**로 등록됩니다. 그 외 값 → `400` `unknown_type`. 생략 시 `ollama`. |
 | `url` | string | Backend 기본 URL. `evernight://<node>/<service>` 브리지 URL은 로컬 evernight agent를 통해 로컬 TCP 포워드로 해석됩니다(해석 실패 → `502` `evernight_unreachable`). 기본값 `http://localhost:11434`. |
 | `api_key` | string | 선택적 업스트림 API key, 업스트림 호출 시 `Authorization: Bearer`로 전송. |
 | `name` | string | Backend 이름. 누락 시 `type` 값이 기본값. 라우팅 `provider` 힌트 및 구성 행 식별자로 사용. |

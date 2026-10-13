@@ -77,7 +77,7 @@ External プローブは `GET {base}/v1/models`（パスプレフィックス付
 
 ### バージョン報告
 
-ヘルスボディの `version` はファミリーバージョンライン（`<base> <branch>::<hash7>`）で、このパッケージ自身のビルドスクリプトが計算します（まず `celestia-devtools version-string`、失敗時は `git rev-parse` への直接フォールバック）。`build_hash` は同じラインの `hash7` 部分なので、ソースが変わったときにだけ変化し、ソースに git メタデータがない場合は `unknown` になります（退役した plana の `BUILD_HASH` 機構はデプロイされたフロントエンドと異なるハッシュを返していました）。`kind` はビルドプロファイルに従います（デバッグビルドなら `dev`、それ以外は `prod`）。ノード間で `build_hash` を比較して、すべてが同じアーティファクトを実行していることを確認してください。
+ヘルスボディの `version` はファミリーバージョンライン（`<base> <branch>:<hash7>`）で、このパッケージ自身のビルドスクリプトが計算します（まず `celestia-devtools version-string`、失敗時は `git rev-parse` への直接フォールバック）。`build_hash` は同じラインの `hash7` 部分なので、ソースが変わったときにだけ変化し、ソースに git メタデータがない場合は `unknown` になります（退役した plana の `BUILD_HASH` 機構はデプロイされたフロントエンドと異なるハッシュを返していました）。`kind` はビルドプロファイルに従います（デバッグビルドなら `dev`、それ以外は `prod`）。ノード間で `build_hash` を比較して、すべてが同じアーティファクトを実行していることを確認してください。
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
 <!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

@@ -43,7 +43,7 @@ Authorization: Bearer $ARONA_ADMIN_TOKEN
 
 | الحقل | النوع | ملاحظات |
 | --- | --- | --- |
-| `type` | string | نوع backend. أحد: `external` (أي واجهة HTTP API متوافقة مع OpenAI)، `ollama` (خادم ollama محلي أو بعيد)، `engine` (محرك CEP عبر `ws://`/`wss://`)، `minimax-cloud` (واجهة فيديو سحابية). تُحل أسماء محرك MDD (`llama_cpp`، `vllm`، `ollama`، `cloud`، `external_api`، `candle`، `native`، ...) عبر المخطط (planner). يُرفض `comfyui` (**`comfyui backend removed`**)؛ وأي شيء آخر → `400` `unknown_type`. الافتراضي `ollama` عند غيابه. |
+| `type` | string | نوع الـ backend. واحد من `external` (أي واجهة HTTP متوافقة مع OpenAI) أو `ollama` (خادم ollama محلي أو بعيد) أو `engine` (محرك CEP عبر `ws://`/`wss://`) أو `minimax-cloud` (واجهة فيديو سحابية) أو `comfyui` (خادم ComfyUI ذاتي الاستضافة؛ يتطلب `workflow`، أُعيد العمل به في 2026-10-13). تُحلّ أسماء محركات MDD ‏(`llama_cpp` و`vllm` و`ollama` و`cloud` و`external_api` و`candle` و`native` وغيرها) عبر الـ planner — يسجّل `vllm` و`llama_cpp` في **وضع الربط** مع نقطة النهاية المتوافقة مع OpenAI التي تعمل بالفعل. أي قيمة أخرى ← `400` ‏`unknown_type`. الافتراضي `ollama`. |
 | `url` | string | عنوان URL الأساسي لـ backend. تُحل عناوين الجسر `evernight://<node>/<service>` عبر وكيل evernight المحلي إلى إعادة توجيه TCP محلية (فشل الحل → `502` `evernight_unreachable`). الافتراضي `http://localhost:11434`. |
 | `api_key` | string | API key اختياري للمنبع، يُرسَل كـ `Authorization: Bearer` في استدعاءات المنبع. |
 | `name` | string | اسم backend. الافتراضي قيمة `type` عند غيابه. يُستخدم كتلميح `provider` للتوجيه وكهوية صف الإعداد. |

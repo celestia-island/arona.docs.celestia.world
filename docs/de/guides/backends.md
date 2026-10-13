@@ -117,13 +117,20 @@ Stoppen der Bereitstellung hebt die Registrierung wieder auf. Siehe
 [Agent-Cluster](agent-cluster.md) für den vollständigen
 Bereitstellungs-Lebenszyklus.
 
-### `comfyui` wird abgelehnt
+### `comfyui` — selbst-gehosteter Workflow-Backend
 
-Der Backend-Typ `comfyui` wird explizit mit dem Fehler `comfyui backend removed` verweigert: Das ComfyUI-Backend wurde während der
-Modellplattform-Konvergenz entfernt, und Videogenerierung läuft jetzt über
-`minimax-cloud`. Die Registrierung eines `comfyui`-Backends liefert ein
-HTTP 400.
-
+Der Backend-Typ `comfyui` registriert einen selbst-gehosteten
+ComfyUI-Server (am 2026-10-13 wiederhergestellt). ComfyUI bietet keine
+OpenAI-kompatible Schnittstelle; arona spricht daher dessen eigene
+HTTP-API — `POST /prompt` (Graph im API-Format), dann Polling über
+`GET /history/{id}` und Artefakt-Abruf per `GET /view` — und greift
+niemals auf das Web-Frontend zu. `models` listet die logischen
+Modell-IDs des Workflows; das Feld `workflow` trägt die Vorlage im
+API-Format mit den Platzhaltern `{prompt}`, `{negative_prompt}`,
+`{image_data_url}`, `{width}`, `{height}`, `{duration}` und `{seed}`.
+Die empfohlene Topologie ist Loopback auf dem GPU-Knoten plus eine
+`evernight://<node>/comfyui`-Bridge: Der ComfyUI-Kernserver hat
+**keine Authentifizierung** und darf niemals direkt exponiert werden.
 ## URL-Semantik
 
 Wie eine konfigurierte Basis-URL auf tatsächliche Endpunkte abgebildet wird,

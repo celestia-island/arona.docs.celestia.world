@@ -115,14 +115,20 @@ routable ; l'arrêt du déploiement le désenregistre à nouveau. Voir
 [Cluster d'agents](agent-cluster.md) pour le cycle de vie de déploiement
 complet.
 
-### `comfyui` est rejeté
+### `comfyui` — backend de workflows auto-hébergé
 
-Le type de backend `comfyui` est explicitement refusé avec l'erreur
-`comfyui backend removed` : le backend ComfyUI a été supprimé lors de la
-convergence de la plateforme de modèles, et la génération vidéo passe désormais
-par `minimax-cloud`. L'enregistrement d'un backend `comfyui` renvoie un HTTP
-400.
-
+Le type de backend `comfyui` enregistre un serveur ComfyUI auto-hébergé
+(rétabli le 2026-10-13). ComfyUI n'expose aucune interface compatible
+OpenAI : arona parle donc son API HTTP propre — `POST /prompt` (graphe
+au format API), puis `GET /history/{id}` en polling et `GET /view` pour
+les artefacts — sans jamais toucher au frontend web. `models` liste les
+ids de modèles logiques servis par le workflow ; le champ `workflow`
+porte le gabarit au format API avec les placeholders `{prompt}`,
+`{negative_prompt}`, `{image_data_url}`, `{width}`, `{height}`,
+`{duration}` et `{seed}`. La topologie recommandée est l'écoute en
+loopback sur le nœud GPU plus un pont `evernight://<node>/comfyui` :
+le serveur cœur de ComfyUI n'a **aucune authentification**, il ne doit
+jamais être exposé directement.
 ## Sémantique des URL
 
 La manière dont une URL de base configurée mappe vers les endpoints réels est

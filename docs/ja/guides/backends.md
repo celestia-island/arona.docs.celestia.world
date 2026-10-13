@@ -66,10 +66,19 @@ Ollama backend は URL だけで構築されます — API key もモデルリ�
 
 GPU agent がモデルのデプロイを完了すると、gateway は `agent-{model_id}` という名前の backend（`http://{agent host}:{port}` 上の `ExternalApiBackend`）を登録し、モデルが即座にルーティング可能になります。デプロイを停止すると再び登録が解除されます。完全なデプロイライフサイクルは[Agent クラスター](agent-cluster.md)を参照してください。
 
-### `comfyui` は拒否される
+### `comfyui` — セルフホストワークフロー backend
 
-`comfyui` backend タイプは `comfyui backend removed` エラーで明示的に拒否されます。ComfyUI backend はモデルプラットフォームの統合時に削除され、ビデオ生成は現在 `minimax-cloud` 経由で実行されます。`comfyui` backend の登録は HTTP 400 を返します。
-
+`comfyui` backend タイプはセルフホストの ComfyUI サーバーを登録します
+（2026-10-13 復活）。ComfyUI には OpenAI 互換インターフェースがなく、
+arona は独自の HTTP API —— `POST /prompt`（API 形式グラフ）→
+`GET /history/{id}` ポーリング → `GET /view` 成果物取得 —— を直接利用し、
+Web フロントエンドには一切依存しません。`models` はワークフローが提供する
+論理モデル id、`workflow` フィールドは `{prompt}`、`{negative_prompt}`、
+`{image_data_url}`、`{width}`、`{height}`、`{duration}`、`{seed}`
+プレースホルダーを持つ API 形式テンプレートです。推奨トポロジは
+GPU ノード上の loopback リスンと `evernight://<node>/comfyui` ブリッジ
+経由です：ComfyUI のコアサーバーは**認証を持たない**ため、直接公開しては
+いけません。
 ## URL セマンティクス
 
 設定されたベース URL が実際のエンドポイントにどうマッピングされるかは、URL がパスコンポーネントを持つかどうかで決まります:

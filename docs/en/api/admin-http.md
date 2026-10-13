@@ -53,7 +53,7 @@ Request body (all fields optional except where noted):
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `type` | string | Backend kind. One of `external` (any OpenAI-compatible HTTP API), `ollama` (local or remote ollama server), `engine` (CEP engine over `ws://`/`wss://`), `minimax-cloud` (cloud video API). MDD engine names (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) resolve through the planner. `comfyui` is **rejected** (`comfyui backend removed`); anything else → `400` `unknown_type`. Defaults to `ollama` when missing. |
+| `type` | string | Backend kind. One of `external` (any OpenAI-compatible HTTP API), `ollama` (local or remote ollama server), `engine` (CEP engine over `ws://`/`wss://`), `minimax-cloud` (cloud video API), `comfyui` (self-hosted ComfyUI server; requires `workflow`, restores 2026-10-13). MDD engine names (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) resolve through the planner — `vllm` and `llama_cpp` register in **attach mode** against the engine's already-running OpenAI-compatible endpoint. Anything else → `400` `unknown_type`. Defaults to `ollama` when missing. |
 | `url` | string | Backend base URL. `evernight://<node>/<service>` bridge URLs are resolved through the local evernight agent into a local TCP forward (resolution failure → `502` `evernight_unreachable`). Defaults to `http://localhost:11434`. |
 | `api_key` | string | Optional upstream API key, sent as `Authorization: Bearer` on upstream calls. |
 | `name` | string | Backend name. Defaults to the `type` value when missing. Used as the routing `provider` hint and for config row identity. |

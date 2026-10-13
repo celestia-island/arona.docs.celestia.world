@@ -109,13 +109,19 @@ so the model becomes routable immediately; stopping the deployment
 unregisters it again. See [Agent Cluster](agent-cluster.md) for the full
 deployment lifecycle.
 
-### `comfyui` is rejected
+### `comfyui` — self-hosted workflow backend
 
-The `comfyui` backend type is explicitly refused with the error
-`comfyui backend removed`: the ComfyUI backend was removed during the
-model-platform convergence, and video generation now runs through
-`minimax-cloud`. Registering a `comfyui` backend returns an HTTP 400.
-
+The `comfyui` backend type registers a self-hosted ComfyUI server
+(restored 2026-10-13). ComfyUI has no OpenAI-compatible surface, so arona
+speaks its own HTTP API — `POST /prompt` (API-format graph), then
+`GET /history/{id}` polling and `GET /view` artifact fetch — and never
+touches the web frontend. `models` lists the logical model ids the
+workflow serves; the `workflow` field carries the API-format template
+with `{prompt}`, `{negative_prompt}`, `{image_data_url}`, `{width}`,
+`{height}`, `{duration}` and `{seed}` placeholders. The recommended
+topology is loopback on the GPU node plus an `evernight://<node>/comfyui`
+bridge: ComfyUI's core server has **no authentication**, so it must never
+be exposed directly.
 ## URL semantics
 
 How a configured base URL maps to actual endpoints is decided by whether the

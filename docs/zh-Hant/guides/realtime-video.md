@@ -149,10 +149,10 @@ task 型：
 `supports_video_generation` 的 backends 解析視訊請求，並尊重選用的
 `provider` 提示（`packages/core/src/routing/mod.rs:205-263`）。
 
-**ComfyUI backend 已被移除**，在模型平台收斂期間：設定 backend 類型
-`"comfyui"` 會失敗，錯誤為 `comfyui backend removed`
-（`packages/core/src/backends/mod.rs:756-757`）。沒有自架視訊路徑；
-視訊一律經由 `minimax-cloud` backend。
+自架視訊通道已恢復（2026-10-13）：`comfyui` backend 把註冊的工作流
+範本經 ComfyUI 自有的 `/prompt` + `/history` API 提交執行，產物由
+media store 鏡像落盤 —— 拓撲與佔位符約定見
+[Backends](./backends.md)。雲端視訊仍走 `minimax-cloud` backend。
 
 ## 任務生命週期與定價
 

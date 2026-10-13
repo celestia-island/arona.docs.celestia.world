@@ -90,7 +90,11 @@ realtime セッションは**1 つのクライアント**と**1 つの upstream*
 
 （`packages/core/src/backends/minimax_cloud.rs:66-210`）。MiniMax backend はチャット / embeddings を提供しません。そのケーパビリティは `supports_video_generation` と `realtime: false` を宣言します（ケーパビリティモデルは[Backends](./backends.md)を参照）。ルーティングはビデオリクエストを `supports_video_generation` を持つ backend に対してのみ解決し、任意の `provider` ヒントを尊重します（`packages/core/src/routing/mod.rs:205-263`）。
 
-**ComfyUI backend は削除されました**（モデルプラットフォームの統合時）: backend kind `"comfyui"` の設定は `comfyui backend removed` で失敗します（`packages/core/src/backends/mod.rs:756-757`）。セルフホストのビデオパスはありません。ビデオは常に `minimax-cloud` backend を経由します。
+セルフホスト動画経路が復活しました（2026-10-13）：`comfyui` backend は
+登録済みワークフローテンプレートを ComfyUI 独自の `/prompt` +
+`/history` API で送信・実行し、成果物は media store 経由でミラーされ
+ます。トポロジとプレースホルダー契約は [Backends](./backends.md) を
+参照してください。クラウド動画は引き続き `minimax-cloud` 経由です。
 
 ## ジョブのライフサイクルと価格
 

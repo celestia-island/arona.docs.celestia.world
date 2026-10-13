@@ -99,12 +99,17 @@ JSON-RPC 2.0 交换标准。任何语言编写的、实现了 handshake → 方�
 模型立即可路由；停止部署则再次注销。完整部署生命周期见
 [Agent 集群](agent-cluster.md)。
 
-### `comfyui` 被拒绝
+### `comfyui` — 自托管工作流 backend
 
-`comfyui` backend 类型被显式拒绝，错误为 `comfyui backend removed`：ComfyUI
-backend 在模型平台收敛期间被移除，视频生成现在通过 `minimax-cloud` 运行。
-注册 `comfyui` backend 会返回 HTTP 400。
-
+`comfyui` backend 类型注册一台自托管 ComfyUI 服务器（2026-10-13 恢复）。
+ComfyUI 没有 OpenAI 兼容接口，arona 直接说它自有的 HTTP API ——
+`POST /prompt`（API 格式图）→ `GET /history/{id}` 轮询 → `GET /view`
+取产物 —— 全程不依赖它的 Web 前端。`models` 列出该工作流对外服务的
+逻辑模型 id；`workflow` 字段携带 API 格式模板，支持 `{prompt}`、
+`{negative_prompt}`、`{image_data_url}`、`{width}`、`{height}`、
+`{duration}`、`{seed}` 占位符。推荐拓扑是 GPU 节点上仅监听 loopback，
+再经 `evernight://<node>/comfyui` 桥接入：ComfyUI 核心服务**没有鉴权**，
+绝不可以直接暴露。
 ## URL 语义
 
 配置的基础 URL 如何映射到实际端点，取决于 URL 是否带有路径组件：

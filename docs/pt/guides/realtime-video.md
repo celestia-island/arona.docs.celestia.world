@@ -160,10 +160,11 @@ capacidades). O roteamento resolve requisições de vídeo apenas contra backend
 com `supports_video_generation`, honrando a dica `provider` opcional
 (`packages/core/src/routing/mod.rs:205-263`).
 
-O **backend ComfyUI foi removido** durante a convergência da plataforma de
-modelos: configurar o kind de backend `"comfyui"` falha com
-`comfyui backend removed` (`packages/core/src/backends/mod.rs:756-757`). Não há
-caminho de vídeo self-hosted; o vídeo sempre passa por um backend
+Existe novamente um caminho de vídeo auto-hospedado (restaurado em
+2026-10-13): um backend `comfyui` envia o modelo de workflow registrado
+pela API própria `/prompt` + `/history` do ComfyUI e o artefato é
+espelhado via media store — topologia e contrato de marcadores em
+[Backends](./backends.md). O vídeo em nuvem continua passando por
 `minimax-cloud`.
 
 ## Ciclo de vida dos jobs e precificação

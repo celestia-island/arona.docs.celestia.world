@@ -144,10 +144,10 @@ generic invocation` 显式拒绝（`packages/core/src/backends/mod.rs:573-586`�
 `supports_video_generation` 的 backend 解析视频请求，并遵循可选的 `provider`
 提示（`packages/core/src/routing/mod.rs:205-263`）。
 
-**ComfyUI backend 已被移除**，发生在模型平台收敛期间：配置 backend kind
-`"comfyui"` 会以 `comfyui backend removed` 失败
-（`packages/core/src/backends/mod.rs:756-757`）。没有自托管视频路径；视频总是
-通过 `minimax-cloud` backend 进行。
+自托管视频通道已恢复（2026-10-13）：`comfyui` backend 把注册的工作流
+模板经 ComfyUI 自有的 `/prompt` + `/history` API 提交执行，产物由
+media store 镜像落盘 —— 拓扑与占位符约定见
+[Backends](./backends.md)。云端视频仍走 `minimax-cloud` backend。
 
 ## 任务生命周期与定价
 

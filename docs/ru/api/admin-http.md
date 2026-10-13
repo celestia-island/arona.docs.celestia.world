@@ -53,7 +53,7 @@ Backends — это маршрутизируемые upstream за шлюзом.
 
 | Поле | Тип | Примечания |
 | --- | --- | --- |
-| `type` | string | Вид backend. Один из `external` (любой OpenAI-совместимый HTTP API), `ollama` (локальный или удалённый сервер ollama), `engine` (CEP-движок через `ws://`/`wss://`), `minimax-cloud` (облачный видео-API). Имена MDD-движков (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) разрешаются через planner. `comfyui` **отклоняется** (`comfyui backend removed`); всё остальное → `400` `unknown_type`. По умолчанию `ollama`, когда не задан. |
+| `type` | string | Тип бэкенда. Один из `external` (любой OpenAI-совместимый HTTP API), `ollama` (локальный или удалённый ollama-сервер), `engine` (CEP engine через `ws://`/`wss://`), `minimax-cloud` (облачный видео-API), `comfyui` (само-хостимый сервер ComfyUI; требует `workflow`, восстановлен 2026-10-13). Имена движков MDD (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) разрешаются через planner — `vllm` и `llama_cpp` регистрируются в **режиме attach** к уже работающему OpenAI-совместимому эндпоинту. Любое другое значение → `400` `unknown_type`. По умолчанию `ollama`. |
 | `url` | string | Базовый URL backend. Bridge-URL `evernight://<node>/<service>` разрешаются через локального агента evernight в локальный TCP-форвард (сбой разрешения → `502` `evernight_unreachable`). По умолчанию `http://localhost:11434`. |
 | `api_key` | string | Опциональный API key upstream, отправляется как `Authorization: Bearer` при вызовах upstream. |
 | `name` | string | Имя backend. По умолчанию значение `type`, когда отсутствует. Используется как подсказка `provider` при маршрутизации и для идентичности строки конфигурации. |

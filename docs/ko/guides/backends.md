@@ -66,10 +66,18 @@ Keepalive 작업이 15초마다 터널을 probe합니다. 원격 측이 재시�
 
 GPU agent가 모델 배포를 완료하면 gateway가 `agent-{model_id}`라는 이름의 backend(`http://{agent host}:{port}` 위의 `ExternalApiBackend`)를 등록하여 모델이 즉시 라우팅 가능해집니다. 배포를 중지하면 다시 등록이 해제됩니다. 전체 배포 수명 주기는 [Agent Cluster](agent-cluster.md)를 참조하세요.
 
-### `comfyui`는 거부됩니다
+### `comfyui` — 셀프 호스팅 워크플로 backend
 
-`comfyui` backend 유형은 `comfyui backend removed` 오류로 명시적으로 거부됩니다: ComfyUI backend는 모델 플랫폼 통합 중에 제거되었으며, 비디오 생성은 이제 `minimax-cloud`를 통해 실행됩니다. `comfyui` backend를 등록하면 HTTP 400이 반환됩니다.
-
+`comfyui` backend 유형은 셀프 호스팅 ComfyUI 서버를 등록합니다
+(2026-10-13 복원). ComfyUI에는 OpenAI 호환 인터페이스가 없어서 arona는
+자체 HTTP API —— `POST /prompt`(API 형식 그래프) → `GET /history/{id}`
+폴링 → `GET /view` 산출물 조회 —— 를 직접 사용하며, 웹 프론트엔드에는
+의존하지 않습니다. `models`는 워크플로가 제공하는 논리 모델 id이고,
+`workflow` 필드는 `{prompt}`, `{negative_prompt}`, `{image_data_url}`,
+`{width}`, `{height}`, `{duration}`, `{seed}` 플레이스홀더를 담은 API
+형식 템플릿입니다. 권장 토폴로지는 GPU 노드에서 loopback만 수신하고
+`evernight://<node>/comfyui` 브리지로 연결하는 것입니다: ComfyUI 코어
+서버에는 **인증이 없으므로** 직접 노출해서는 안 됩니다.
 ## URL 의미
 
 구성된 기본 URL이 실제 엔드포인트에 매핑되는 방식은 URL에 경로 구성 요소가 있는지 여부에 따라 결정됩니다:

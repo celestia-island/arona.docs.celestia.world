@@ -158,10 +158,11 @@ MiniMax الدردشة والتضمينات (chat/embeddings)؛ وتصرّح ق�
 مراعيًا تلميح `provider` الاختياري
 (`packages/core/src/routing/mod.rs:205-263`).
 
-**أُزيل backend ComfyUI** أثناء تقارب منصة النماذج: إعداد نوع backend
-`"comfyui"` يفشل برسالة `comfyui backend removed`
-(`packages/core/src/backends/mod.rs:756-757`). لا يوجد مسار فيديو ذاتي
-الاستضافة؛ يمر الفيديو دائمًا عبر backend من نوع `minimax-cloud`.
+عاد مسار الفيديو ذاتي الاستضافة للوجود (أُعيد العمل به في 2026-10-13):
+يقدم الـ backend ‏`comfyui` قالب الـ workflow المسجّل عبر واجهة
+`/prompt` + `/history` الخاصة بـ ComfyUI، وتُنسخ المخرجات عبر media
+store — الطوبولوجيا وعقد العناصر النائبة في
+[Backends](./backends.md). لا يزال فيديو السحابة يمر عبر `minimax-cloud`.
 
 ## دورة حياة المهمة والتسعير
 

@@ -54,7 +54,7 @@ Corpo da requisição (todos os campos opcionais, exceto onde indicado):
 
 | Campo | Tipo | Notas |
 | --- | --- | --- |
-| `type` | string | Kind de backend. Um de `external` (qualquer API HTTP compatível com OpenAI), `ollama` (servidor ollama local ou remoto), `engine` (engine CEP sobre `ws://`/`wss://`), `minimax-cloud` (API de vídeo em nuvem). Nomes de engine MDD (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) resolvem pelo planner. `comfyui` é **rejeitado** (`comfyui backend removed`); qualquer outra coisa → `400` `unknown_type`. Padrão `ollama` quando ausente. |
+| `type` | string | Tipo de backend. Um de `external` (qualquer API HTTP compatível com OpenAI), `ollama` (servidor ollama local ou remoto), `engine` (CEP engine sobre `ws://`/`wss://`), `minimax-cloud` (API de vídeo em nuvem), `comfyui` (servidor ComfyUI auto-hospedado; requer `workflow`, restaurado 2026-10-13). Nomes de engines MDD (`llama_cpp`, `vllm`, `ollama`, `cloud`, `external_api`, `candle`, `native`, ...) resolvem via planner — `vllm` e `llama_cpp` registram em **modo attach** contra o endpoint compatível com OpenAI já em execução. Qualquer outro valor → `400` `unknown_type`. Padrão `ollama`. |
 | `url` | string | URL base do backend. URLs de bridge `evernight://<node>/<service>` são resolvidas pelo agent evernight local em um forward TCP local (falha de resolução → `502` `evernight_unreachable`). Padrão `http://localhost:11434`. |
 | `api_key` | string | API key de upstream opcional, enviada como `Authorization: Bearer` nas chamadas de upstream. |
 | `name` | string | Nome do backend. Padrão do valor de `type` quando ausente. Usado como a dica de `provider` do roteamento e para a identidade da linha de configuração. |

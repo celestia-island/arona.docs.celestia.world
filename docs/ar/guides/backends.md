@@ -105,12 +105,19 @@ Admin HTTP API](../api/admin-http.md))، وتُحفظ في جدول `backend_con
 فيصبح النموذج قابلًا للتوجيه فورًا؛ إيقاف النشر يلغي تسجيله مجددًا. انظر
 [مجموعة الـ Agent](agent-cluster.md) لدورة حياة النشر الكاملة.
 
-### `comfyui` مرفوض
+### `comfyui` — واجهة backend ذاتية الاستضافة للـ workflows
 
-يُرفض نوع backend `comfyui` صراحةً مع الخطأ `comfyui backend removed`:
-أُزيل backend ComfyUI أثناء التقارب نحو منصة النماذج، ويعمل توليد الفيديو
-الآن عبر `minimax-cloud`. تسجيل backend من نوع `comfyui` يُعيد HTTP 400.
-
+يسجّل نوع الـ backend ‏`comfyui` خادم ComfyUI ذاتي الاستضافة
+(أُعيد العمل به في 2026-10-13). لا يملك ComfyUI واجهة متوافقة مع
+OpenAI، لذا تتحدث arona مع واجهة HTTP الخاصة به مباشرة —
+`POST /prompt` (رسم بصيغة API) ثم استطلاع `GET /history/{id}` وجلب
+المُخرجات عبر `GET /view` — دون أي اعتماد على واجهة الويب الأمامية.
+يسرد `models` معرّفات النماذج المنطقية التي يخدمها الـ workflow، ويحمل
+حقل `workflow` القالب بصيغة API مع العناصر النائبة `{prompt}` و
+`{negative_prompt}` و `{image_data_url}` و `{width}` و `{height}` و
+`{duration}` و `{seed}`. الطوبولوجيا الموصى بها هي الاستماع على loopback
+في عقدة الـ GPU مع جسر `evernight://<node>/comfyui`: خادم ComfyUI
+الأساسي **لا يحتوي على أي مصادقة**، لذا يجب ألا يُكشف عنه مباشرة أبدًا.
 ## دلالات الـ URL
 
 الطريقة التي يُحدَّد بها عنوان أساسي مُهيَّأ لنقاط النهاية الفعلية تتقرر حسب

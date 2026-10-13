@@ -165,11 +165,12 @@ Video-Anfragen nur gegen Backends mit `supports_video_generation` auf und
 berücksichtigt den optionalen `provider`-Hinweis
 (`packages/core/src/routing/mod.rs:205-263`).
 
-Das **ComfyUI-Backend wurde entfernt** während der Konvergenz der
-Modellplattform: Die Konfiguration der Backend-Art `"comfyui"` schlägt mit
-`comfyui backend removed` fehl (`packages/core/src/backends/mod.rs:756-757`).
-Es gibt keinen selbstgehosteten Video-Pfad; Video läuft immer über ein
-`minimax-cloud`-Backend.
+Es gibt wieder einen selbst-gehosteten Videoweg (wiederhergestellt am
+2026-10-13): Ein `comfyui`-Backend reicht die registrierte
+Workflow-Vorlage über ComfyUIs eigene `/prompt`- + `/history`-API ein und
+spiegelt das Artefakt über den Media Store — Topologie und
+Platzhalter-Vertrag siehe [Backends](./backends.md). Cloud-Video läuft
+weiterhin über `minimax-cloud`.
 
 ## Job-Lebenszyklus & Preisgestaltung
 

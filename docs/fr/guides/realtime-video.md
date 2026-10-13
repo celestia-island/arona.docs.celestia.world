@@ -163,11 +163,11 @@ requêtes vidéo uniquement contre les backends avec `supports_video_generation`
 en honorant l'indice `provider` optionnel
 (`packages/core/src/routing/mod.rs:205-263`).
 
-Le **backend ComfyUI a été supprimé** lors de la convergence de la plateforme
-de modèles : configurer le type de backend `"comfyui"` échoue avec
-`comfyui backend removed` (`packages/core/src/backends/mod.rs:756-757`). Il
-n'y a pas de chemin vidéo auto-hébergé ; la vidéo passe toujours par un
-backend `minimax-cloud`.
+Une voie vidéo auto-hébergée existe à nouveau (rétablie le 2026-10-13) :
+un backend `comfyui` soumet le gabarit de workflow enregistré via l'API
+propre `/prompt` + `/history` de ComfyUI et l'artefact est reflété par le
+media store — voir [Backends](./backends.md) pour la topologie et le
+contrat des placeholders. La vidéo cloud passe toujours par `minimax-cloud`.
 
 ## Cycle de vie et tarification des jobs
 

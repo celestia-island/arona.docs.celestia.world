@@ -163,10 +163,12 @@ capacidades). El routing resuelve las solicitudes de vídeo solo contra backends
 con `supports_video_generation`, respetando la pista `provider` opcional
 (`packages/core/src/routing/mod.rs:205-263`).
 
-El **backend ComfyUI se eliminó** durante la convergencia de la plataforma de
-modelos: configurar el tipo de backend `"comfyui"` falla con `comfyui backend
-removed` (`packages/core/src/backends/mod.rs:756-757`). No hay ruta de vídeo
-autoalojada; el vídeo siempre pasa por un backend `minimax-cloud`.
+Vuelve a existir una ruta de vídeo autoalojada (restaurada el 2026-10-13):
+un backend `comfyui` envía la plantilla de flujo registrada a través de la
+API propia `/prompt` + `/history` de ComfyUI y el artefacto se refleja vía
+el media store — topología y contrato de marcadores en
+[Backends](./backends.md). El vídeo en la nube sigue pasando por
+`minimax-cloud`.
 
 ## Ciclo de vida de los trabajos y precios
 

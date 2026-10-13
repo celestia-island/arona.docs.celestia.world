@@ -158,10 +158,11 @@ does not serve chat/embeddings; its capabilities declare
 requests only against backends with `supports_video_generation`, honouring the
 optional `provider` hint (`packages/core/src/routing/mod.rs:205-263`).
 
-The **ComfyUI backend was removed** during the model-platform convergence:
-configuring backend kind `"comfyui"` fails with `comfyui backend removed`
-(`packages/core/src/backends/mod.rs:756-757`). There is no self-hosted video
-path; video always goes through a `minimax-cloud` backend.
+A self-hosted video path exists again (restored 2026-10-13): a `comfyui`
+backend submits the registered workflow template through ComfyUI's own
+`/prompt` + `/history` API and mirrors the artifact via the media store —
+see [Backends](./backends.md) for the topology and placeholder contract.
+Cloud video still runs through `minimax-cloud` backends.
 
 ## Job lifecycle & pricing
 

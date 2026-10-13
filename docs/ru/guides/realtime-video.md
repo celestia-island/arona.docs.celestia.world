@@ -161,10 +161,12 @@ Backends без общего канала вызова (все OpenAI-совме
 против backends с `supports_video_generation`, учитывая опциональную
 подсказку `provider` (`packages/core/src/routing/mod.rs:205-263`).
 
-**Backend ComfyUI был удалён** при конвергенции модельной платформы:
-настройка вида backend `"comfyui"` завершается ошибкой `comfyui backend
-removed` (`packages/core/src/backends/mod.rs:756-757`). Self-hosted пути
-для видео нет; видео всегда идёт через backend `minimax-cloud`.
+Путь само-хостимого видео снова существует (восстановлен 2026-10-13):
+бэкенд `comfyui` отправляет зарегистрированный шаблон workflow через
+собственный `/prompt` + `/history` API ComfyUI, а артефакт зеркалируется
+через media store — топология и контракт плейсхолдеров см.
+[Backends](./backends.md). Облачное видео по-прежнему идёт через
+`minimax-cloud`.
 
 ## Жизненный цикл задач и цены
 

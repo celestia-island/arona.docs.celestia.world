@@ -100,13 +100,17 @@ keepalive 任務每 15 秒探測一次隧道；當遠端重新啟動、隧道在
 `ExternalApiBackend`），使模型立即可路由；停止部署時會再次取消註冊。
 完整的部署生命週期見[Agent 叢集](agent-cluster.md)。
 
-### `comfyui` 會被拒絕
+### `comfyui` — 自架工作流 backend
 
-`comfyui` backend 類型會被明確拒絕，錯誤訊息為
-`comfyui backend removed`：ComfyUI backend 在模型平台收斂期間被移除，
-視訊生成現已改由 `minimax-cloud` 進行。註冊 `comfyui` backend 會回傳
-HTTP 400。
-
+`comfyui` backend 類型註冊一台自架 ComfyUI 伺服器（2026-10-13 恢復）。
+ComfyUI 沒有 OpenAI 相容介面，arona 直接使用它自有的 HTTP API ——
+`POST /prompt`（API 格式圖）→ `GET /history/{id}` 輪詢 → `GET /view`
+取產物 —— 全程不依賴它的 Web 前端。`models` 列出該工作流對外服務的
+邏輯模型 id；`workflow` 欄位攜帶 API 格式範本，支援 `{prompt}`、
+`{negative_prompt}`、`{image_data_url}`、`{width}`、`{height}`、
+`{duration}`、`{seed}` 佔位符。建議拓撲是 GPU 節點僅監聽 loopback，
+再經 `evernight://<node>/comfyui` 橋接入：ComfyUI 核心服務**沒有鑑權**，
+絕不可直接暴露。
 ## URL 語意
 
 設定的基礎 URL 如何對應到實際 endpoint，取決於 URL 是否帶有路徑元件：

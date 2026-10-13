@@ -107,7 +107,7 @@ Zhipu GLM coding-plan endpoint 就是其一。**404 是可接受的**：backend 
 
 ### 版本回報
 
-健康體中的 `version` 是家族版本線（`<base> <branch>::<hash7>`），由本套件自己的建置腳本計算（優先 `celestia-devtools version-string`，失敗時回退直接 `git rev-parse`）。`build_hash` 是同一版本線的 `hash7` 半段，只在原始碼變化時才變，原始碼無 git 中繼資料時為 `unknown`（已退役的 plana `BUILD_HASH` 設施給出的雜湊與部署前端不一致）。`kind` 跟隨建置設定檔（偵錯建置為 `dev`，否則為 `prod`）。跨節點比較 `build_hash` 以確認執行的是同一構件。
+健康體中的 `version` 是家族版本線（`<base> <branch>:<hash7>`），由本套件自己的建置腳本計算（優先 `celestia-devtools version-string`，失敗時回退直接 `git rev-parse`）。`build_hash` 是同一版本線的 `hash7` 半段，只在原始碼變化時才變，原始碼無 git 中繼資料時為 `unknown`（已退役的 plana `BUILD_HASH` 設施給出的雜湊與部署前端不一致）。`kind` 跟隨建置設定檔（偵錯建置為 `dev`，否則為 `prod`）。跨節點比較 `build_hash` 以確認執行的是同一構件。
 
 <!-- note: The /api/health JSON field is `uptime` (u64 seconds), not `uptime_seconds`; the field name comes from plana's shared `HealthResponse` (`plana::http::HealthResponse`). -->
 <!-- src: packages/core/src/gateway/server.rs (health), packages/core/src/version.rs (health_payload/version_report/build_hash/build_kind), packages/core/src/gateway/rpc.rs (dispatch_stateless/handle_service_info/handle_system_status), packages/core/build.rs (version_line/emit_version_line) -->

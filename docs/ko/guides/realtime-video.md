@@ -91,7 +91,11 @@ Video 작업은 REST 표면 위의 OpenAI 스타일 비동기 작업입니다(AP
 
 (`packages/core/src/backends/minimax_cloud.rs:66-210`). MiniMax backend는 chat/embeddings를 제공하지 않습니다. 기능은 `supports_video_generation`을 선언하고 `realtime: false`입니다(기능 모델은 [Backends](./backends.md) 참조). 라우팅은 선택적 `provider` 힌트를 존중하며 `supports_video_generation`이 있는 backend에 대해서만 video 요청을 해석합니다(`packages/core/src/routing/mod.rs:205-263`).
 
-**ComfyUI backend는 제거되었습니다** — 모델 플랫폼 통합 중에: backend 종류 `"comfyui"` 구성은 `comfyui backend removed`로 실패합니다(`packages/core/src/backends/mod.rs:756-757`). 자체 호스팅 video 경로는 없습니다. Video는 항상 `minimax-cloud` backend를 통해 진행됩니다.
+셀프 호스팅 영상 경로가 복원되었습니다(2026-10-13): `comfyui` backend는
+등록된 워크플로 템플릿을 ComfyUI 자체 `/prompt` + `/history` API로
+제출·실행하고, 산출물은 media store를 통해 미러링됩니다. 토폴로지와
+플레이스홀더 계약은 [Backends](./backends.md)를 참고하세요. 클라우드
+영상은 계속 `minimax-cloud`를 통해 처리됩니다.
 
 ## 작업 수명 주기 및 가격 책정
 
