@@ -58,7 +58,7 @@ Backends — это маршрутизируемые upstream за шлюзом.
 | `api_key` | string | Опциональный API key upstream, отправляется как `Authorization: Bearer` при вызовах upstream. |
 | `name` | string | Имя backend. По умолчанию значение `type`, когда отсутствует. Используется как подсказка `provider` при маршрутизации и для идентичности строки конфигурации. |
 | `models` | string[] | Статический список моделей. Источник маршрутизации, когда probing не обнаруживает ничего. Для `external` backends обнаруженные модели объединяются после статического списка (статичные id сохраняют приоритет); `engine` backends сначала возвращают свой кэш обнаруженных моделей и добавляют статичные id после; `minimax-cloud` не выполняет обнаружение моделей (его проба только health-пингует `/v1/query/available_models`) и обслуживает один статический список. Игнорируется для `ollama`, который обнаруживает модели из `/api/tags`. |
-| `workflow` | object | Опционально. Legacy — исторически потреблялся удалённым backend ComfyUI; ни один текущий backend его не читает (сохранён для совместимости колонки `backend_configs`). |
+| `workflow` | object | Опционально. Шаблон рабочего процесса ComfyUI — читается и требуется backend `comfyui`; остальные виды его игнорируют (сохранён для совместимости колонки `backend_configs`). |
 
 Пример:
 
@@ -103,6 +103,16 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
     "health": [
       ["backend_0:ExternalApi", "Healthy"],
       ["backend_1:Ollama", { "Unhealthy": "connection refused" }]
+    ],
+    "rows": [
+      {
+        "index": 0,
+        "label": "backend_0:ExternalApi",
+        "name": "external",
+        "kind": "external",
+        "status": "healthy",
+        "models": ["Qwen/Qwen3-1.7B"]
+      }
     ]
   },
   "models": [
@@ -115,6 +125,7 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
 - `backends.health` — метка `backend_<index>:<kind>` на каждый backend
   и состояние health (`Healthy` / `Degraded` / `Unhealthy`). `<index>` — это
   индекс регистрации в роутере, используемый `DELETE /api/admin/backends`.
+- `backends.rows` — машиночитаемые строки реестра (основное чтение панели): `index` (адрес уровня удаления), `label`, настроенный `name`, `kind` в snake_case, `status` как дискретное слово в нижнем регистре (`healthy` / `degraded` / `unhealthy`), необязательная причина `detail` и снимок обслуживаемых `models`.
 - `models` — каждый id модели, маршрутизируемый сегодня (тот же список,
   что и `GET /v1/models`, без объединения быстрых стартовых; см.
   [OpenAI-совместимый REST](./openai-rest.md#get-v1models)).
@@ -207,6 +218,6 @@ curl -X DELETE http://192.0.2.10:8080/api/admin/aliases \
 | Backends | Да — таблица `backend_configs` (ключ `name`, upsert при регистрации, удаление при удалении). | Да: восстанавливаются при старте; external backends стартуют fail-closed и переходят в healthy после первого раунда проб. URL `evernight://` заново разрешаются через bridge при старте. |
 | Aliases | Нет — только in-memory `Router.aliases`. | Нет. |
 
-<!-- src: packages/core/src/gateway/server.rs:577-600 (check_admin), 588-698 (add_backend), 700-722 (list_backends_admin), 724-775 (remove_backend), 779-819 (add_alias_handler), 821-838 (list_aliases), 840-869 (remove_alias_handler); packages/core/src/backends/mod.rs:675-771 (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs:276-292 (aliases); packages/core/src/gateway/run.rs:87-132 (backend restore) -->
+<!-- src: packages/core/src/gateway/server.rs (check_rbac_permission, add_backend, list_backends_admin, remove_backend, add_alias_handler, list_aliases, remove_alias_handler); packages/core/src/backends/mod.rs (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs (aliases); packages/core/src/gateway/run.rs (backend restore) -->
 
-<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs:737-747. Also confirmed: aliases are in-memory only (routing/mod.rs:276-292); `workflow` is legacy and ignored by all current backends (backends/mod.rs:682-688); `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (backends/mod.rs:738-739, ollama.rs:57-91). -->
+<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs remove_backend. Also confirmed: aliases are in-memory only (routing/mod.rs aliases()); `workflow` is the ComfyUI workflow template, required and read by the `comfyui` backend (backends/mod.rs build_backend_from_config, comfyui.rs); GET also returns `backends.rows` machine-readable registry rows; `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (ollama.rs). -->

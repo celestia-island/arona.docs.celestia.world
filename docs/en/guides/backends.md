@@ -79,7 +79,8 @@ next call reconnects and re-handshakes.
 
 The cloud video backend drives the MiniMax H3 Open Platform API: submit a
 generation task, poll for completion, then read the artifact URL from the
-result. This is what replaced the removed ComfyUI backend (see below); video
+result. This filled the image-generation role while the ComfyUI backend was
+removed (it has since been restored — see below); video
 jobs are submitted through `/v1/video/generations` or the `video.*` RPC
 methods and progress through `video.progress` / `video.done` / `video.failed`
 notifications (see [Realtime & Video](realtime-video.md)).

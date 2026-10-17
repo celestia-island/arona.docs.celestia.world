@@ -54,7 +54,7 @@ Ollama backend は URL だけで構築されます — API key もモデルリ�
 
 ### `minimax-cloud` — タスク型ビデオ生成
 
-クラウドビデオ backend は MiniMax H3 Open Platform API を駆動します: 生成タスクを送信し、完了をポーリングし、結果からアーティファクト URL を読み取ります。これは削除された ComfyUI backend の後継です（下記参照）。ビデオジョブは `/v1/video/generations` または `video.*` RPC メソッドで送信され、`video.progress` / `video.done` / `video.failed` 通知で進捗します（[Realtime & Video](realtime-video.md) を参照）。
+クラウドビデオ backend は MiniMax H3 Open Platform API を駆動します: 生成タスクを送信し、完了をポーリングし、結果からアーティファクト URL を読み取ります。これは ComfyUI backend が削除されていた間に画像生成の役割を担ったものであり、ComfyUI はその後復活しています（下記参照）。ビデオジョブは `/v1/video/generations` または `video.*` RPC メソッドで送信され、`video.progress` / `video.done` / `video.failed` 通知で進捗します（[Realtime & Video](realtime-video.md) を参照）。
 
 ### `evernight://` ブリッジ URL
 

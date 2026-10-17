@@ -73,7 +73,7 @@ JSON-RPC 2.0 交换标准。任何语言编写的、实现了 handshake → 方�
 ### `minimax-cloud` —— 任务式视频生成
 
 云视频 backend 驱动 MiniMax H3 开放平台 API：提交生成任务、轮询完成、再从
-结果中读取产物 URL。这就是取代已移除的 ComfyUI backend 的方案（见下文）；
+结果中读取产物 URL。这是 ComfyUI backend 被移除期间填补图像生成角色的方案（ComfyUI 现已恢复——见下文）；
 视频任务通过 `/v1/video/generations` 或 `video.*` RPC 方法提交，并通过
 `video.progress` / `video.done` / `video.failed` 通知汇报进度
 （见 [实时与视频](realtime-video.md)）。

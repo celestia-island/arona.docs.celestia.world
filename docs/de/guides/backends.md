@@ -83,8 +83,8 @@ verbindet sich neu und macht erneut den Handshake.
 
 Das Cloud-Video-Backend steuert die MiniMax-H3-Open-Platform-API: einen
 Generierungs-Task einreichen, auf Abschluss pollen und dann die Artefakt-URL
-aus dem Ergebnis lesen. Das ist es, was das entfernte ComfyUI-Backend ersetzt
-hat (siehe unten); Video-Jobs werden über `/v1/video/generations` oder die
+aus dem Ergebnis lesen. Dies füllte die Bildgenerierungs-Rolle, während das ComfyUI-Backend
+entfernt war (inzwischen wiederhergestellt — siehe unten); Video-Jobs werden über `/v1/video/generations` oder die
 `video.*`-RPC-Methoden eingereicht und schreiten über
 `video.progress` / `video.done` / `video.failed`-Notifications fort (siehe
 [Realtime & Video](realtime-video.md)).

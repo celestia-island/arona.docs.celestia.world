@@ -76,7 +76,7 @@ Admin HTTP API](../api/admin-http.md))، وتُحفظ في جدول `backend_con
 
 يُشغّل backend الفيديو السحابي API منصة MiniMax H3 Open Platform: أرسل
 مهمة توليد، واستطلِع الاكتمال، ثم اقرأ عنوان الـ artifact من النتيجة. هذا
-ما حل محل backend ComfyUI المُزال (انظر أدناه)؛ تُرسل مهام الفيديو عبر
+سدّ هذا دور توليد الصور أثناء إزالة backend ComfyUI (وقد أُعيد العمل به منذ ذلك الحين — انظر أدناه)؛ تُرسل مهام الفيديو عبر
 `/v1/video/generations` أو طرق RPC الخاصة بـ `video.*` ويتقدّم العمل عبر
 إشعارات `video.progress` / `video.done` / `video.failed` (انظر
 [الوقت الفعلي والفيديو](realtime-video.md)).

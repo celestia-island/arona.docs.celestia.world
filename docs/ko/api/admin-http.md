@@ -46,7 +46,7 @@ Backend는 gateway 뒤의 라우팅 가능한 업스트림입니다. 등록은 b
 | `api_key` | string | 선택적 업스트림 API key, 업스트림 호출 시 `Authorization: Bearer`로 전송. |
 | `name` | string | Backend 이름. 누락 시 `type` 값이 기본값. 라우팅 `provider` 힌트 및 구성 행 식별자로 사용. |
 | `models` | string[] | 정적 모델 목록. Probing이 아무것도 발견하지 못할 때의 라우팅 소스. `external` backend의 경우 발견된 모델이 정적 목록 뒤에 병합됩니다(정적 id가 우선권 유지). `engine` backend는 발견된 모델 캐시를 먼저 반환하고 정적 id를 뒤에 추가합니다. `minimax-cloud`는 모델 발견을 수행하지 않으며(probe는 `/v1/query/available_models`를 health ping만) 정적 목록만 제공합니다. `/api/tags`에서 모델을 발견하는 `ollama`는 무시합니다. |
-| `workflow` | object | 선택. 레거시 — 역사적으로 제거된 ComfyUI backend가 소비했으며 현재 backend는 읽지 않습니다(`backend_configs` 열 호환성용으로 유지). |
+| `workflow` | object | 선택. ComfyUI 워크플로 템플릿 — `comfyui` backend가 읽으며 해당 backend에서는 필수. 다른 종류는 무시합니다(`backend_configs` 열 호환성용으로 유지). |
 
 예:
 
@@ -85,6 +85,16 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
     "health": [
       ["backend_0:ExternalApi", "Healthy"],
       ["backend_1:Ollama", { "Unhealthy": "connection refused" }]
+    ],
+    "rows": [
+      {
+        "index": 0,
+        "label": "backend_0:ExternalApi",
+        "name": "external",
+        "kind": "external",
+        "status": "healthy",
+        "models": ["Qwen/Qwen3-1.7B"]
+      }
     ]
   },
   "models": [
@@ -95,6 +105,7 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
 
 - `backends.count` — **healthy** backend 수.
 - `backends.health` — backend별 `backend_<index>:<kind>` 라벨과 health 상태(`Healthy` / `Degraded` / `Unhealthy`). `<index>`는 `DELETE /api/admin/backends`가 사용하는 라우터 등록 인덱스입니다.
+- `backends.rows` — 기계 판독 가능한 레지스트리 행(패널의 기본 읽기): `index`(삭제 플레인의 주소), `label`, 설정된 `name`, snake_case `kind`, 개별 소문자 단어인 `status`(`healthy` / `degraded` / `unhealthy`), 선택적 `detail` 사유, 서빙 중인 `models` 스냅샷.
 - `models` — 오늘 라우팅 가능한 모든 모델 id(quick-start 병합이 없는 `GET /v1/models`와 동일한 목록. [OpenAI 호환 REST](./openai-rest.md#get-v1models) 참조).
 
 ### DELETE /api/admin/backends — backend 제거
@@ -176,6 +187,6 @@ curl -X DELETE http://192.0.2.10:8080/api/admin/aliases \
 | Backends | 예 — `backend_configs` 테이블(`name` 키, 등록 시 upsert, 제거 시 삭제). | 예: 시작 시 복원. External backend는 fail-closed로 시작하고 첫 probe 라운드 후 healthy로 전환. `evernight://` URL은 시작 시 브리지를 통해 재해석. |
 | Aliases | 아니요 — 인메모리 `Router.aliases`만. | 아니요. |
 
-<!-- src: packages/core/src/gateway/server.rs:577-600 (check_admin), 588-698 (add_backend), 700-722 (list_backends_admin), 724-775 (remove_backend), 779-819 (add_alias_handler), 821-838 (list_aliases), 840-869 (remove_alias_handler); packages/core/src/backends/mod.rs:675-771 (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs:276-292 (aliases); packages/core/src/gateway/run.rs:87-132 (backend restore) -->
+<!-- src: packages/core/src/gateway/server.rs (check_rbac_permission, add_backend, list_backends_admin, remove_backend, add_alias_handler, list_aliases, remove_alias_handler); packages/core/src/backends/mod.rs (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs (aliases); packages/core/src/gateway/run.rs (backend restore) -->
 
-<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs:737-747. Also confirmed: aliases are in-memory only (routing/mod.rs:276-292); `workflow` is legacy and ignored by all current backends (backends/mod.rs:682-688); `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (backends/mod.rs:738-739, ollama.rs:57-91). -->
+<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs remove_backend. Also confirmed: aliases are in-memory only (routing/mod.rs aliases()); `workflow` is the ComfyUI workflow template, required and read by the `comfyui` backend (backends/mod.rs build_backend_from_config, comfyui.rs); GET also returns `backends.rows` machine-readable registry rows; `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (ollama.rs). -->

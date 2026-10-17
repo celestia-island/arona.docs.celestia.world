@@ -46,7 +46,7 @@ Backend は gateway の背後にあるルーティング可能な upstream で�
 | `api_key` | string | 任意の upstream API key。upstream 呼び出しで `Authorization: Bearer` として送信されます。 |
 | `name` | string | Backend 名。欠落時は `type` 値がデフォルト。ルーティングの `provider` ヒントと設定行のアイデンティティとして使用されます。 |
 | `models` | string[] | 静的モデルリスト。プロービングで何も発見されない場合のルーティングソース。`external` backend では、発見されたモデルは静的リストの後にマージされます（静的な id が優先順位を保持）。`engine` backend は発見されたモデルキャッシュを先に返し、静的な id を後から追加します。`minimax-cloud` はモデルディスカバリーを行いません（そのプローブは `/v1/query/available_models` へのヘルスピングのみ）し、静的リストだけを提供します。`ollama` では無視され、`/api/tags` からモデルを発見します。 |
-| `workflow` | object | 任意。レガシー — 歴史的に削除された ComfyUI backend が消費していました。現在の backend は読み取りません（`backend_configs` カラム互換のために保持）。 |
+| `workflow` | object | 任意。ComfyUI ワークフローテンプレート — `comfyui` backend が読み取り、そこでは必須。他の種別は無視します（`backend_configs` カラム互換のために保持）。 |
 
 例:
 
@@ -85,6 +85,16 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
     "health": [
       ["backend_0:ExternalApi", "Healthy"],
       ["backend_1:Ollama", { "Unhealthy": "connection refused" }]
+    ],
+    "rows": [
+      {
+        "index": 0,
+        "label": "backend_0:ExternalApi",
+        "name": "external",
+        "kind": "external",
+        "status": "healthy",
+        "models": ["Qwen/Qwen3-1.7B"]
+      }
     ]
   },
   "models": [
@@ -95,6 +105,7 @@ curl -X POST http://192.0.2.10:8080/api/admin/backends \
 
 - `backends.count` — **healthy** な backend の数。
 - `backends.health` — backend ごとの `backend_<index>:<kind>` ラベルとヘルス状態（`Healthy` / `Degraded` / `Unhealthy`）。`<index>` は `DELETE /api/admin/backends` が使用するルーター登録インデックスです。
+- `backends.rows` — 機械可読なレジストリ行（パネルの一次読み取り）：`index`（削除プレーンのアドレス）、`label`、設定された `name`、snake_case の `kind`、離散小文字ワードの `status`（`healthy` / `degraded` / `unhealthy`）、任意の `detail` 理由、提供中の `models` スナップショット。
 - `models` — 今日ルーティング可能なすべてのモデル id（`GET /v1/models` と同じ一覧。クイックスタートのマージなし。[OpenAI 互換 REST](./openai-rest.md#get-v1models)を参照）。
 
 ### DELETE /api/admin/backends — backend を削除する
@@ -176,6 +187,6 @@ curl -X DELETE http://192.0.2.10:8080/api/admin/aliases \
 | Backend | はい — `backend_configs` テーブル（`name` キー、登録時に upsert、削除時に delete）。 | はい: 起動時に復元。external backend は fail-closed で始まり、最初のプローブラウンド後に healthy に切り替わります。`evernight://` URL は起動時にブリッジ経由で再解決されます。 |
 | エイリアス | いいえ — インメモリの `Router.aliases` のみ。 | いいえ。 |
 
-<!-- src: packages/core/src/gateway/server.rs:577-600 (check_admin), 588-698 (add_backend), 700-722 (list_backends_admin), 724-775 (remove_backend), 779-819 (add_alias_handler), 821-838 (list_aliases), 840-869 (remove_alias_handler); packages/core/src/backends/mod.rs:675-771 (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs:276-292 (aliases); packages/core/src/gateway/run.rs:87-132 (backend restore) -->
+<!-- src: packages/core/src/gateway/server.rs (check_rbac_permission, add_backend, list_backends_admin, remove_backend, add_alias_handler, list_aliases, remove_alias_handler); packages/core/src/backends/mod.rs (BackendConfig / build_backend_from_config); packages/core/src/routing/mod.rs (aliases); packages/core/src/gateway/run.rs (backend restore) -->
 
-<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs:737-747. Also confirmed: aliases are in-memory only (routing/mod.rs:276-292); `workflow` is legacy and ignored by all current backends (backends/mod.rs:682-688); `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (backends/mod.rs:738-739, ollama.rs:57-91). -->
+<!-- note: Fact-sheet delta: DELETE /api/admin/backends identifies the backend by a JSON-body `index` field (router registration index), not by name — server.rs remove_backend. Also confirmed: aliases are in-memory only (routing/mod.rs aliases()); `workflow` is the ComfyUI workflow template, required and read by the `comfyui` backend (backends/mod.rs build_backend_from_config, comfyui.rs); GET also returns `backends.rows` machine-readable registry rows; `models` is ignored by the `ollama` kind, which discovers models from `/api/tags` (ollama.rs). -->

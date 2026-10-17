@@ -83,8 +83,8 @@ l'appel suivant se reconnecte et refait le handshake.
 
 Le backend vidéo cloud pilote l'API MiniMax H3 Open Platform : soumettez une
 tâche de génération, sondez son achèvement, puis lisez l'URL de l'artefact
-dans le résultat. C'est ce qui a remplacé le backend ComfyUI supprimé (voir
-ci-dessous) ; les jobs vidéo sont soumis via `/v1/video/generations` ou les
+dans le résultat. Cela a assuré la génération d'images pendant que le backend ComfyUI
+était supprimé (il a depuis été rétabli — voir ci-dessous) ; les jobs vidéo sont soumis via `/v1/video/generations` ou les
 méthodes RPC `video.*` et progressent via les notifications `video.progress` /
 `video.done` / `video.failed` (voir [Realtime & Vidéo](realtime-video.md)).
 

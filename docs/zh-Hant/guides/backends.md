@@ -74,8 +74,8 @@ Wire methods：`Engine.Handshake`（第一則訊息；身分 + 能力）、
 ### `minimax-cloud` — task 型視訊生成
 
 雲端視訊 backend 驅動 MiniMax H3 Open Platform API：送出生成任務、輪詢
-完成，然後從結果讀取 artifact URL。這取代了已移除的 ComfyUI backend
-（見下文）；視訊任務透過 `/v1/video/generations` 或 `video.*` RPC 方法送出，
+完成，然後從結果讀取 artifact URL。這是在 ComfyUI backend 移除期間填補圖像生成角色的方案
+（ComfyUI 現已恢復——見下文）；視訊任務透過 `/v1/video/generations` 或 `video.*` RPC 方法送出，
 進度透過 `video.progress`／`video.done`／`video.failed` 通知傳遞
 （見[Realtime 與視訊](realtime-video.md)）。
 

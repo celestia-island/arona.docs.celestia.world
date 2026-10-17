@@ -82,7 +82,7 @@ qualquer erro; a próxima chamada reconecta e refaz o handshake.
 
 O backend de vídeo em nuvem dirige a API MiniMax H3 Open Platform: submeta uma
 task de geração, faça poll até a conclusão e leia a URL do artefato do
-resultado. Foi isso que substituiu o backend ComfyUI removido (veja abaixo);
+resultado. Isto cobriu a geração de imagens enquanto o backend ComfyUI esteve removido (desde então restaurado — veja abaixo);
 jobs de vídeo são submetidos via `/v1/video/generations` ou os métodos RPC
 `video.*` e progridem através de notificações `video.progress` / `video.done` /
 `video.failed` (veja [Realtime e vídeo](realtime-video.md)).
