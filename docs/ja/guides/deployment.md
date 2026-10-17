@@ -53,6 +53,8 @@ install -m 0755 target/release/_cli /usr/local/bin/arona-server
 
 ## 設定
 
+設定は**固定 TOML ファイル**を主な担い手とする（`./arona.toml` または `/etc/arona/arona.toml` で発見、もしくは `ARONA_CONFIG` で指定）。環境変数はキー単位の上書きとして機能する——[設定リファレンス](./configuration.md)と `arona.toml.example` を参照。以下は env のみを使う場合の最小セット。
+
 すべての設定は環境変数で行います。[設定リファレンス](./configuration.md)にすべての変数が記載されており、リポジトリルートの `.env.example` は動作する出発点です。最小セット:
 
 | 変数 | 必須? | 用途 |

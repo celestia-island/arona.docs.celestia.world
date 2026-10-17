@@ -73,6 +73,8 @@ release y el Dockerfile.
 
 ## Configuración
 
+La configuración tiene un **archivo TOML fijo** como soporte principal (se descubre en `./arona.toml` o `/etc/arona/arona.toml`, o se fija con `ARONA_CONFIG`), con las variables de entorno como anulaciones por clave — consulta la [referencia de configuración](./configuration.md) y `arona.toml.example`. Abajo está el mínimo para funcionar solo con env.
+
 Toda la configuración se hace mediante variables de entorno; la
 [referencia de configuración](./configuration.md) documenta todas las
 variables, y `.env.example` en la raíz del repositorio es un punto de partida

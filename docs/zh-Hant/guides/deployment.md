@@ -67,6 +67,8 @@ Dockerfile 所建置的內容。
 
 ## 設定
 
+設定以**固定 TOML 檔案**為主載體（在 `./arona.toml` 或 `/etc/arona/arona.toml` 發現，或用 `ARONA_CONFIG` 指定），環境變數作為逐鍵覆蓋——詳見[設定參考](./configuration.md)與 `arona.toml.example`。下方列出的是僅用環境變數時的最小集。
+
 所有設定都透過環境變數進行；[設定參考](./configuration.md) 記錄了每個
 變數，而儲存庫根目錄的 `.env.example` 是可用的起點。最低需求組合：
 

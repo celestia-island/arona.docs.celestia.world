@@ -54,6 +54,8 @@ install -m 0755 target/release/_cli /usr/local/bin/arona-server
 
 ## 구성
 
+설정은 **고정 TOML 파일**이 주 저장소다(`./arona.toml` 또는 `/etc/arona/arona.toml`에서 발견되며, `ARONA_CONFIG`로 지정 가능). 환경 변수는 키 단위 재정의로 동작한다——[설정 참고서](./configuration.md)와 `arona.toml.example` 참조. 아래는 env만 사용할 때의 최소 집합이다.
+
 모든 구성은 환경 변수를 통해 이루어집니다. [구성 참조](./configuration.md)가 모든 변수를 문서화하며, 저장소 루트의 `.env.example`은 작동하는 시작점입니다. 최소 집합:
 
 | 변수 | 필수? | 용도 |

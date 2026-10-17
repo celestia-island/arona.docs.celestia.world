@@ -151,9 +151,10 @@ model behind this legend.
 
 | Method | Auth | Params | Description |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | Register an account. Only allowed while registration is open (`ARONA_REGISTRATION_OPEN`); the first registered user becomes the admin. Returns the same token response as `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`). |
-| `auth.login` | public | `email`, `password` | Log in. Returns `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, permissions }` (effective permission names)). Rate-limited per IP and account. |
+| `auth.register` | public | `email`, `password`, `name?` | Register an account. Only allowed while registration is open (`ARONA_REGISTRATION_OPEN`); the first registered user becomes the admin. Returns the same token response as `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`).  In `auth.mode = public` this method fails closed with `AUTH_ERROR` (password authentication disabled). |
+| `auth.login` | public | `email`, `password` | Log in. Returns `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, permissions }` (effective permission names)). Rate-limited per IP and account.  In `auth.mode = public` this method fails closed with `AUTH_ERROR` (password authentication disabled). |
 | `auth.refresh` | public | `refresh_token` | Exchange a refresh token for a fresh access token (and a new refresh token). Reused or expired refresh tokens are rejected with `AUTH_ERROR`. |
+| `auth.methods` | public | — | Which auth doors exist: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [names] }`. Booleans and names only. |
 | `auth.me` | JWT | — | Current user profile: `{ "id", "email", "name" }`. |
 
 ## Keys

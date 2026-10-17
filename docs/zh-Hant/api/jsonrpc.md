@@ -112,9 +112,10 @@ keys）。此圖例背後的完整 auth 模型見
 
 | 方法 | Auth | 參數 | 說明 |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`、`password`、`name?` | 註冊帳號。只在註冊開放時允許（`ARONA_REGISTRATION_OPEN`）；第一個註冊的使用者成為管理員。回傳與 `auth.login` 相同的 token 回應（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）。 |
-| `auth.login` | public | `email`、`password` | 登入。回傳 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, is_admin }`）。依 IP 與帳號速率限制。 |
+| `auth.register` | public | `email`、`password`、`name?` | 註冊帳號。只在註冊開放時允許（`ARONA_REGISTRATION_OPEN`）；第一個註冊的使用者成為管理員。回傳與 `auth.login` 相同的 token 回應（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）。  在 `auth.mode = public` 下本方法整體關閉，回傳 `AUTH_ERROR`（密碼認證已停用）。 |
+| `auth.login` | public | `email`、`password` | 登入。回傳 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, is_admin }`）。依 IP 與帳號速率限制。  在 `auth.mode = public` 下本方法整體關閉，回傳 `AUTH_ERROR`（密碼認證已停用）。 |
 | `auth.refresh` | public | `refresh_token` | 將 refresh token 換成新的 access token（與新的 refresh token）。被重用或過期的 refresh tokens 以 `AUTH_ERROR` 被拒絕。 |
+| `auth.methods` | 公開 | — | 查詢存在哪些認證門：`{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [名稱] }`。僅布林與名稱。 |
 | `auth.me` | JWT | — | 目前使用者設定檔：`{ "id", "email", "name" }`。 |
 
 ## Keys

@@ -124,9 +124,10 @@ completo por trás desta legenda.
 
 | Método | Auth | Params | Descrição |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | Registra uma conta. Permitido apenas enquanto o registro está aberto (`ARONA_REGISTRATION_OPEN`); o primeiro usuário registrado vira o admin. Retorna a mesma resposta de token que `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`). |
-| `auth.login` | public | `email`, `password` | Faz login. Retorna `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`). Com limite de taxa por IP e conta. |
+| `auth.register` | public | `email`, `password`, `name?` | Registra uma conta. Permitido apenas enquanto o registro está aberto (`ARONA_REGISTRATION_OPEN`); o primeiro usuário registrado vira o admin. Retorna a mesma resposta de token que `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`).  No modo `auth.mode = public`, este método falha fechado com `AUTH_ERROR` (autenticação por senha desativada). |
+| `auth.login` | public | `email`, `password` | Faz login. Retorna `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`). Com limite de taxa por IP e conta.  No modo `auth.mode = public`, este método falha fechado com `AUTH_ERROR` (autenticação por senha desativada). |
 | `auth.refresh` | public | `refresh_token` | Troca um refresh token por um access token novo (e um refresh token novo). Refresh tokens reutilizados ou expirados são rejeitados com `AUTH_ERROR`. |
+| `auth.methods` | público | — | Quais portas de autenticação existem: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [nomes] }`. Apenas booleanos e nomes. |
 | `auth.me` | JWT | — | Perfil do usuário atual: `{ "id", "email", "name" }`. |
 
 ## Chaves

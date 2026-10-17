@@ -7,6 +7,63 @@ description: "JWT セッション、API key、3 つの admin ゲート、パス�
 
 Arona は 2 つの系統で呼び出し元を認証します: 対話型クライアント（チャット + 管理 UI、RPC 呼び出し）用の **JWT セッションtoken**と、プログラムによる OpenAI 互換トラフィック用の **API key**（`arona-…`）です。管理サーフェスは別の admin token で保護されます。このページでは、その仕組み、セキュリティモデル、そしてセキュリティ監査から判明した既知の低リスク残件を説明します。
 
+## 公開モードとリレーログイン
+
+Arona には [TOML 設定](./configuration.md)の `auth.mode` で選ぶ
+2 つの認証ポーズがある：
+
+- **`local`**（デフォルト）—— 従来の動作。`auth.login` / `auth.register`
+  が JSON-RPC 面でメール+パスワードを受け付ける。信頼できるネットワーク
+  または厳格なリバースプロキシの内側向け。
+- **`public`** —— インターネット向けのポーズ。パスワードの口は閉鎖され
+  （リレー入口を指すエラーを返す）、対話型のアイデンティティは**下記の**
+  **リレー経由でのみ**入り、プログラマティックな呼び出しは API key を
+  そのまま使い続ける。`public` モードでリレー入口が 1 つも設定されて
+  いない場合、サーバーは起動を拒否する——両方忘れた運用者は全員を
+  締め出すことになるからだ。
+
+2 つのドアがあり、arona が自分自身の身份プロバイダになることは決してない：
+
+### OAuth2 リレー（`[auth.oauth]`）
+
+**外部パネル**向けの標準 authorization-code + PKCE（S256）クライアント
+（プロバイダは設定されるもので、ホストするものではない）：
+
+1. `GET /auth/oauth/begin` —— arona が使い捨て `state` と PKCE verifier
+   （サーバー側保持、TTL 付き）を発行し、パネルの authorize エンドポイント
+   へリダイレクトする。
+2. パネルがユーザーを認証し、`GET /auth/oauth/callback?code=…&state=…`
+   へリダイレクトし戻す。
+3. arona は token エンドポイントでコードを交換し、userinfo エンドポイント
+   を読み、パネル識別をローカルアカウントへ対応付ける。レスポンスは
+   `auth.login` と同じ形（`access_token`、`refresh_token`、`user`）で、
+   クライアント側に新しいトークン処理は不要。
+
+識別クレームは `email`（OIDC 標準）、次にメール形状の
+`preferred_username`。不透明な裸の `sub` は決して受け付けない。未知の
+識別は `allow_signup`（デフォルト `true`）が許す限り自動で開設される。
+**空のインスタンスでの最初のリレーログインは administrators グループに
+ブートストラップされる**——local モードの初回登録と完全に同じ扱いだ。
+
+### 信頼済み発行者リレー（`[[auth.trusted_issuers]]`）
+
+API 側の等価物（evernight ゲートウェイ方式）：その **kirino ACCESS
+トークン**を、arona が JWT を受け付けるすべてのベアラー面（`/v1/*` と
+JSON-RPC 面）で直接受け付けるパネル。各行は発行者（`iss`、強制検証）、
+共有検証シークレット、任意の `audience` を宣言する。検証は発行者ごとに
+fail-closed で——他の発行者（または発行者なし）のトークンはすべて拒否さ
+れ、refresh トークンは決してセッションベアラーになれない。パネルユーザー
+の `username` クレームはメールでなければならない（arona のユーザー面は
+メールを主キーにする）。識別は**ローカル**アカウントへ対応付き、未知の
+識別はその行の `allow_signup` に従って開設される。
+
+### ディスカバリとポーズ報告
+
+未認証の `auth.methods` JSON-RPC メソッドは、どのドアが存在するかを
+報告し（`password`、`oauth {begin_url, provider}`、`api_keys`、
+`trusted_issuers` —— ブール値と名前のみ）、`system.status` は同じ事実を
+持つ追加の `auth` ブロックを運用に向けて報告する。
+
 ## JWT セッション
 
 セッションは `kirino_session` tokenマネージャーが発行する JWT access/refresh tokenペアを使用します:

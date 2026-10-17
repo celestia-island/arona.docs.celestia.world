@@ -123,9 +123,10 @@ events. Подпишитесь на SSE-endpoint **до или сразу пос
 
 | Метод | Auth | Params | Описание |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | Зарегистрировать аккаунт. Разрешено, только пока регистрация открыта (`ARONA_REGISTRATION_OPEN`); первый зарегистрированный пользователь становится администратором. Возвращает тот же token ответ, что и `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`). |
-| `auth.login` | public | `email`, `password` | Войти. Возвращает `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`). Rate limit по IP и аккаунту. |
+| `auth.register` | public | `email`, `password`, `name?` | Зарегистрировать аккаунт. Разрешено, только пока регистрация открыта (`ARONA_REGISTRATION_OPEN`); первый зарегистрированный пользователь становится администратором. Возвращает тот же token ответ, что и `auth.login` (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`).  В режиме `auth.mode = public` метод закрыт и возвращает `AUTH_ERROR` (парольная аутентификация отключена). |
+| `auth.login` | public | `email`, `password` | Войти. Возвращает `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`). Rate limit по IP и аккаунту.  В режиме `auth.mode = public` метод закрыт и возвращает `AUTH_ERROR` (парольная аутентификация отключена). |
 | `auth.refresh` | public | `refresh_token` | Обменять refresh-token на свежий access-token (и новый refresh-token). Повторно использованные или истёкшие refresh-tokens отклоняются с `AUTH_ERROR`. |
+| `auth.methods` | публичный | — | Какие двери аутентификации существуют: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [имена] }`. Только булевы значения и имена. |
 | `auth.me` | JWT | — | Профиль текущего пользователя: `{ "id", "email", "name" }`. |
 
 ## Keys

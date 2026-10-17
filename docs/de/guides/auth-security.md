@@ -12,6 +12,71 @@ Admin-Token schützt die administrativen Oberflächen. Diese Seite dokumentiert
 die Mechanismen, das Sicherheitsmodell und die bekannten risikoarmen Restposten
 aus einem Sicherheits-Audit.
 
+## Öffentlicher Modus & Relay-Login
+
+Arona liefert zwei Authentifizierungshaltungen, gewählt über `auth.mode`
+in der [TOML-Konfiguration](./configuration.md):
+
+- **`local`** (Standard) — das historische Verhalten. `auth.login` /
+  `auth.register` nehmen E-Mail+Passwort auf der JSON-RPC-Ebene an.
+  In Ordnung hinter einem vertrauenswürdigen Netz oder einem strikten
+  Reverse-Proxy.
+- **`public`** — die internetseitige Haltung. Die Passwort-Arme schlagen
+  geschlossen fehl (mit einem Fehler, der auf die Relay-Türen zeigt);
+  interaktive Identität kommt **nur** über die Relays unten herein, und
+  programmatische Aufrufer nutzen weiterhin unverändert API-Keys. Im
+  Modus `public` verweigert der Server den Start, wenn nicht mindestens
+  eine Relay-Tür konfiguriert ist — wer beide vergisst, sperrt jeden
+  Menschen aus.
+
+Es gibt zwei Türen, und arona ist nie sein eigener Identitätsanbieter:
+
+### OAuth2-Relay (`[auth.oauth]`)
+
+Ein standardmäßiger Authorization-Code-+PKCE(S256)-Client gegen ein
+externes Panel (der Anbieter wird konfiguriert, nie selbst gehostet):
+
+1. `GET /auth/oauth/begin` — arona erzeugt ein einmaliges `state` plus
+   PKCE-Verifier (serverseitig gehalten, TTL-begrenzt) und leitet zum
+   Authorize-Endpunkt des Panels um.
+2. Das Panel authentifiziert den Nutzer und leitet zurück auf
+   `GET /auth/oauth/callback?code=…&state=…`.
+3. arona tauscht den Code am Token-Endpunkt, liest den
+   Userinfo-Endpunkt und bildet die Panel-Identität auf ein lokales
+   Konto ab. Die Antwort hat dieselbe Form wie `auth.login`
+   (`access_token`, `refresh_token`, `user`) — Clients brauchen keine
+   neue Token-Behandlung.
+
+Der Identitätsanspruch ist `email` (OIDC-Standard), ersatzweise
+`preferred_username`, wenn es wie eine E-Mail aussieht; ein nacktes
+opakes `sub` wird nie akzeptiert. Unbekannte Identitäten werden
+angelegt, solange `allow_signup` gilt (Standard `true`); die **erste
+Relay-Anmeldung auf einer leeren Instanz bootstrapt in die
+administrators-Gruppe** — exakt wie die erste Registrierung im
+Local-Modus.
+
+### Vertrauenswürdiges Aussteller-Relay (`[[auth.trusted_issuers]]`)
+
+Das API-seitige Gegenstück (das Evernight-Gateway-Muster): Panels, deren
+**kirino-ACCESS-Token** arona auf jeder Bearer-Fläche direkt akzeptiert
+(`/v1/*`, wo JWTs akzeptiert werden, und die JSON-RPC-Ebene). Jede Zeile
+benennt den Aussteller (`iss`, erzwungen), das gemeinsame
+Verifikationsgeheimnis und ein optionales `audience`; die Verifikation
+ist je Aussteller fail-closed — ein Token eines anderen (oder ohne)
+Ausstellers wird abgelehnt, und Refresh-Tokens sind niemals
+Sitzungs-Bearer. Der `username`-Anspruch des Panel-Nutzers muss eine
+E-Mail sein (aronas Nutzerebene schlüsselt auf E-Mail); sie bildet auf
+das LOKALE Konto ab, unbekannte Identitäten werden gemäß der
+`allow_signup`-Zeile angelegt.
+
+### Discovery & Haltungsbericht
+
+Die unauthentifizierte JSON-RPC-Methode `auth.methods` meldet, welche
+Türen existieren (`password`, `oauth {begin_url, provider}`,
+`api_keys`, `trusted_issuers` — nur Boolesche Werte und Namen), und
+`system.status` trägt einen additiven `auth`-Block mit denselben
+Fakten für Operatoren.
+
 ## JWT-Sessions
 
 Sessions verwenden JWT-Access-/Refresh-Token-Paare, die vom

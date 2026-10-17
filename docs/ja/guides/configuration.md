@@ -1,13 +1,63 @@
 ---
 title: "設定"
-description: "Arona サーバーが読み込むすべての環境変数のリファレンス — デフォルト値とセマンティクス付き。"
+description: "Arona サーバーが読み取る固定 TOML 設定ファイルとすべての環境変数のリファレンス。デフォルト値とセマンティクス付き。"
 ---
 
 # 設定
+Arona の設定は**固定 TOML ファイル**を主な担い手とし、環境変数はキー単位の上書きとして機能する。各キーの解決順序は **明示的な環境変数 → TOML 値 → 内蔵デフォルト** で、既存の env 駆動デプロイ（systemd ユニット、docker-compose、`.env.example`）はそのまま動き、新しいデプロイはすべてを 1 つのファイルに固定できる。
 
-Arona は**完全に環境変数**で設定され、プロセス起動時に一度だけ読み込まれます（`packages/core/src/config.rs` の `Config::load` と、最初の使用時に読み込まれる少数の変数）。設定ファイルはありません。変数を変更したら、サーバーを再起動して反映させてください。
+## 設定ファイル
 
-このページは、サーバーコードが読み込むすべての項目を関心事ごとにまとめたリファレンスです。mock 専用とランタイムの変数も完全性のために含めています。
+ファイルは以下の順で発見される——先に見つかったものが使われる：
+1. `ARONA_CONFIG` のパス（存在必須。欠落や読み取り不可は起動時の致命的エラー）；
+2. 作業ディレクトリの `./arona.toml`；
+3. `/etc/arona/arona.toml`；
+4. どこにもない → 環境変数のみの従来モード。
+
+**サイレントフォールバックはない**：発見したファイルのパース失敗・未知キー・未解決の `${VAR}` 補間は、いずれも致命的エラーとして起動を中断する。`${VAR}` / `${VAR:-default}` 補間により、シークレットは環境変数や systemd `LoadCredential` に置いたまま、ファイルには参照だけを書ける。コメント付きの雛形 `arona.toml.example` がリポジトリルートにある。
+
+ブールキー（`registration_open`、`writeback`、`backend_local`、`mistralrs_force`、`mock`）はファイル内では TOML のブール値でなければならない。env 形式は下記の truthy 文字列 / 存在即可のセマンティクスを維持する。`ARONA_RUSTFS_ACCESS_KEY_FILE` / `ARONA_RUSTFS_SECRET_KEY_FILE` 変種は環境変数のみで有効。
+
+auth セクションはさらに、env 形式を持たない **構造化された** 2 つのブロックを運ぶ：`[auth.oauth]`（OAuth2 リレープロバイダー——エンドポイントURL、クライアント資格情報、スコープ、サインアップ方針）と `[[auth.trusted_issuers]]`（kirino ACCESS トークンを直接受け付けるパネル——発行者、共有シークレット、任意の audience）。いずれも起動時に検証され、[認証とセキュリティ](./auth-security.md)に詳述する。
+
+| 環境変数 | TOML キー |
+| --- | --- |
+| `ARONA_HOST` | `server.host` |
+| `ARONA_PORT` | `server.port` |
+| `ARONA_DATA_DIR` | `server.data_dir` |
+| `DATABASE_URL` | `database.url` |
+| `ARONA_DB_MAX_CONNECTIONS` | `database.max_connections` |
+| `JWT_SECRET` | `auth.jwt_secret` |
+| `ARONA_ADMIN_TOKEN` | `auth.admin_token` |
+| `ARONA_AGENT_TOKEN` | `auth.agent_token` |
+| `ARONA_REGISTRATION_OPEN` | `auth.registration_open` |
+| `ARONA_API_RATE_LIMIT_RPM` | `auth.rate_limit_rpm` |
+| `ARONA_AUTH_MODE` | `auth.mode` |
+| `ARONA_CONFIG_KEY` | `catalog.config_key` |
+| `ARONA_MEMORY_URL` | `memory.url` |
+| `ARONA_MEMORY_TOKEN` | `memory.token` |
+| `ARONA_MEMORY_WRITEBACK` | `memory.writeback` |
+| `ARONA_MEMORY_SCOPE` | `memory.scope` |
+| `ARONA_MEDIA_URL_TTL_SECS` | `media.url_ttl_secs` |
+| `ARONA_MEDIA_BUCKET` | `media.bucket` |
+| `ARONA_MEDIA_BACKEND_LOCAL` | `media.backend_local` |
+| `ARONA_RUSTFS_ENDPOINT` | `storage.endpoint` |
+| `ARONA_RUSTFS_PUBLIC_ENDPOINT` | `storage.public_endpoint` |
+| `ARONA_RUSTFS_REGION` | `storage.region` |
+| `ARONA_RUSTFS_ACCESS_KEY` | `storage.access_key` |
+| `ARONA_RUSTFS_SECRET_KEY` | `storage.secret_key` |
+| `ARONA_EVERNIGHT_URL` | `bridge.evernight_url` |
+| `ARONA_AGENT_NAME` | `agent.name` |
+| `ARONA_PANEL_URL` | `agent.panel_url` |
+| `ARONA_AGENT_BIND_ADDR` | `agent.bind_addr` |
+| `ARONA_MISTRALRS` | `agent.mistralrs_force` |
+| `ARONA_POINTS_PER_USD` | `billing.points_per_usd` |
+| `MOCK_MODE` | `dev.mock` |
+| `MOCK_SEED_PATH` | `dev.seed_path` |
+| `HF_ENDPOINT` | `downloads.hf_endpoint` |
+| `GITHUB_TOKEN` | `downloads.github_token` |
+
+以降は**環境変数リファレンス**であり、マッピングされた TOML キーのセマンティクス参照も兼ねる（同名・同デフォルト）。
 
 ## リファレンステーブル
 
@@ -57,7 +107,7 @@ set MOCK_MODE=1 only for local development.
 
 ### `ARONA_HOST` / `ARONA_PORT`
 
-gateway のバインドアドレスとポート。レガシー互換のため `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT` にフォールバックします。最終的なデフォルトは `0.0.0.0:8420` です。
+gateway のバインドアドレスとポート。レガシー互換のため `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT` にフォールバックします。最終的なデフォルトは `0.0.0.0:8420` です。（順序に注意：設定ファイルの `server.host`/`server.port` はレガシーエイリアスより優先され、正規の `ARONA_HOST`/`ARONA_PORT` のみがファイルより優先される）
 
 ### `ARONA_DATA_DIR`
 
@@ -153,5 +203,5 @@ GitHub モデルレジストリ（`gh:` ソース）が API アクセスに使�
 | Memory 書き戻し | オン |
 | 登録 | クローズ |
 
-<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
+<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/config/file.rs (discovery, interpolation, KEY_MAP), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
 <!-- note: beyond the fact sheet, four more variables are read by the server code and were added to the table for completeness: ARONA_EVERNIGHT_URL (backends/bridge.rs:76, default ws://127.0.0.1:3001/ws), ARONA_MISTRALRS (pipeline.rs:136, presence semantics), ARONA_AGENT_BIND_ADDR (orchestration/llama_cpp.rs:437-438, default 127.0.0.1 — the bind of the spawned llama.cpp engine, distinct from the agent HTTP API which stays hardcoded to 0.0.0.0:5790, agent/src/main.rs:109), and HF_ENDPOINT (models/download.rs:30-40). -->

@@ -64,6 +64,8 @@ install -m 0755 target/release/_cli /usr/local/bin/arona-server
 
 ## 配置
 
+配置以**固定 TOML 文件**为主载体（在 `./arona.toml` 或 `/etc/arona/arona.toml` 发现，或用 `ARONA_CONFIG` 指定），环境变量作为逐键覆盖——详见[配置参考](./configuration.md)与 `arona.toml.example`。下方列出的是仅用环境变量时的最小集。
+
 所有配置都通过环境变量进行；[配置参考](./configuration.md) 记录了每个变量，
 仓库根目录的 `.env.example` 是一个可用的起点。最小集合：
 

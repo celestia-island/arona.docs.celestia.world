@@ -1,18 +1,63 @@
 ---
 title: "Конфигурация"
-description: "Справочник по каждой переменной окружения, которую читает сервер Arona, с значениями по умолчанию и семантикой."
+description: "Справочник по фиксированному TOML-файлу конфигурации и всем переменным окружения, которые читает сервер Arona, со значениями по умолчанию и семантикой."
 ---
 
 # Конфигурация
+Arona читает конфигурацию из **фиксированного TOML-файла**, а переменные окружения действуют как переопределения по ключам. Каждый ключ разрешается как **явная переменная окружения → значение TOML → встроенное значение по умолчанию**; существующие env-разворачивания (systemd-юниты, docker-compose, `.env.example`) работают без изменений, а новые могут закрепить всё в одном файле.
 
-Arona настраивается **целиком через переменные окружения**, которые читаются
-один раз при запуске процесса (`Config::load` в
-`packages/core/src/config.rs`, плюс несколько переменных, читаемых при первом
-использовании). Файла конфигурации нет: измените переменную и перезапустите
-сервер, чтобы она вступила в силу.
+## Файл конфигурации
 
-Эта страница — справочник по всему, что читает код сервера, сгруппированный
-по областям. Mock-only и рантайм-переменные включены для полноты.
+Файл обнаруживается в следующем порядке — побеждает первый найденный:
+1. путь из `ARONA_CONFIG` (он должен существовать; отсутствующий или нечитаемый файл — фатальная ошибка запуска);
+2. `./arona.toml` в рабочем каталоге;
+3. `/etc/arona/arona.toml`;
+4. ничего не найдено → классический режим только переменных окружения.
+
+**Молчаливого отката нет**: найденный файл, который не разбирается, содержит неизвестный ключ или неразрешённую интерполяцию `${VAR}`, прерывает запуск с фатальной ошибкой. Интерполяция `${VAR}` / `${VAR:-default}` позволяет держать секреты в окружении или systemd `LoadCredential`, тогда как файл содержит только ссылки. Прокомментированный шаблон поставляется как `arona.toml.example` в корне репозитория.
+
+Логические ключи (`registration_open`, `writeback`, `backend_local`, `mistralrs_force`, `mock`) должны быть TOML-булевыми в файле; их env-формы сохраняют задокументированную ниже семантику truthy-строки или наличия. Варианты `ARONA_RUSTFS_ACCESS_KEY_FILE` / `ARONA_RUSTFS_SECRET_KEY_FILE` остаются только для окружения.
+
+Секция auth дополнительно несёт два **структурных** блока без env-формы: `[auth.oauth]` (провайдер OAuth2-релея — URL эндпоинтов, клиентские учётные данные, scopes, политика регистрации) и `[[auth.trusted_issuers]]` (панели, чьи kirino ACCESS-токены принимаются напрямую — издатель, общий секрет, необязательный audience). Оба проверяются при старте и описаны в [Аутентификация и безопасность](./auth-security.md).
+
+| Переменная окружения | Ключ TOML |
+| --- | --- |
+| `ARONA_HOST` | `server.host` |
+| `ARONA_PORT` | `server.port` |
+| `ARONA_DATA_DIR` | `server.data_dir` |
+| `DATABASE_URL` | `database.url` |
+| `ARONA_DB_MAX_CONNECTIONS` | `database.max_connections` |
+| `JWT_SECRET` | `auth.jwt_secret` |
+| `ARONA_ADMIN_TOKEN` | `auth.admin_token` |
+| `ARONA_AGENT_TOKEN` | `auth.agent_token` |
+| `ARONA_REGISTRATION_OPEN` | `auth.registration_open` |
+| `ARONA_API_RATE_LIMIT_RPM` | `auth.rate_limit_rpm` |
+| `ARONA_AUTH_MODE` | `auth.mode` |
+| `ARONA_CONFIG_KEY` | `catalog.config_key` |
+| `ARONA_MEMORY_URL` | `memory.url` |
+| `ARONA_MEMORY_TOKEN` | `memory.token` |
+| `ARONA_MEMORY_WRITEBACK` | `memory.writeback` |
+| `ARONA_MEMORY_SCOPE` | `memory.scope` |
+| `ARONA_MEDIA_URL_TTL_SECS` | `media.url_ttl_secs` |
+| `ARONA_MEDIA_BUCKET` | `media.bucket` |
+| `ARONA_MEDIA_BACKEND_LOCAL` | `media.backend_local` |
+| `ARONA_RUSTFS_ENDPOINT` | `storage.endpoint` |
+| `ARONA_RUSTFS_PUBLIC_ENDPOINT` | `storage.public_endpoint` |
+| `ARONA_RUSTFS_REGION` | `storage.region` |
+| `ARONA_RUSTFS_ACCESS_KEY` | `storage.access_key` |
+| `ARONA_RUSTFS_SECRET_KEY` | `storage.secret_key` |
+| `ARONA_EVERNIGHT_URL` | `bridge.evernight_url` |
+| `ARONA_AGENT_NAME` | `agent.name` |
+| `ARONA_PANEL_URL` | `agent.panel_url` |
+| `ARONA_AGENT_BIND_ADDR` | `agent.bind_addr` |
+| `ARONA_MISTRALRS` | `agent.mistralrs_force` |
+| `ARONA_POINTS_PER_USD` | `billing.points_per_usd` |
+| `MOCK_MODE` | `dev.mock` |
+| `MOCK_SEED_PATH` | `dev.seed_path` |
+| `HF_ENDPOINT` | `downloads.hf_endpoint` |
+| `GITHUB_TOKEN` | `downloads.github_token` |
+
+Остальная часть страницы — **справочник переменных окружения**; он же служит семантическим справочником для сопоставленных TOML-ключей (те же имена, те же значения по умолчанию).
 
 ## Справочная таблица
 
@@ -69,7 +114,7 @@ set MOCK_MODE=1 only for local development.
 ### `ARONA_HOST` / `ARONA_PORT`
 
 Адрес и порт привязки шлюза. Для обратной совместимости они откатываются
-к `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT`; конечные значения по умолчанию —
+к `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT`; конечные значения по умолчанию — (порядок: `server.host`/`server.port` из файла конфигурации старше наследуемых алиасов — только канонические `ARONA_HOST`/`ARONA_PORT` старше файла)
 `0.0.0.0:8420`.
 
 ### `ARONA_DATA_DIR`
@@ -217,5 +262,5 @@ Access token, используемый реестром моделей GitHub (�
 | Writeback памяти | включён |
 | Регистрация | закрыта |
 
-<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
+<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/config/file.rs (discovery, interpolation, KEY_MAP), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
 <!-- note: beyond the fact sheet, four more variables are read by the server code and were added to the table for completeness: ARONA_EVERNIGHT_URL (backends/bridge.rs:76, default ws://127.0.0.1:3001/ws), ARONA_MISTRALRS (pipeline.rs:136, presence semantics), ARONA_AGENT_BIND_ADDR (orchestration/llama_cpp.rs:437-438, default 127.0.0.1 — the bind of the spawned llama.cpp engine, distinct from the agent HTTP API which stays hardcoded to 0.0.0.0:5790, agent/src/main.rs:109), and HF_ENDPOINT (models/download.rs:30-40). -->

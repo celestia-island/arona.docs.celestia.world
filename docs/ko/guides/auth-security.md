@@ -7,6 +7,60 @@ description: "JWT 세션, API keys, 세 가지 admin 게이트, 비밀번호 정
 
 Arona는 두 트랙으로 호출자를 인증합니다: 대화형 클라이언트(chat + 관리 UI, RPC 호출)를 위한 **JWT 세션 token**과 프로그래매틱 OpenAI 호환 트래픽을 위한 **API keys**(`arona-…`). 별도의 admin token이 관리 표면을 보호합니다. 이 페이지는 메커니즘, 보안 모델, 보안 감사에서 알려진 위험이 낮은 잔여 항목을 문서화합니다.
 
+## 공개 모드와 릴레이 로그인
+
+Arona에는 [TOML 설정](./configuration.md)의 `auth.mode`로 선택하는 두 가지
+인증 자세가 있다:
+
+- **`local`** (기본값) —— 기존 동작. `auth.login` / `auth.register`가
+  JSON-RPC 면에서 이메일+비밀번호를 받는다. 신뢰할 수 있는 네트워크나
+  엄격한 리버스 프록시 뒤에 적합하다.
+- **`public`** —— 인터넷 대상 자세. 비밀번호 통로는 닫히고(릴레이 입구를
+  가리키는 오류 반환) 대화형 신원은 **아래의 릴레이를 통해서만** 들어오며,
+  프로그램 호출은 API key를 그대로 계속 쓴다. `public` 모드에서 릴레이
+  입구가 하나도 설정되지 않으면 서버는 시작을 거부한다——둘 다 빠뜨린
+  운영자는 모든 사람을 밖에 가두게 되기 때문이다.
+
+두 개의 문이 있고, arona는 결코 자기 자신의 신원 제공자가 되지 않는다:
+
+### OAuth2 릴레이 (`[auth.oauth]`)
+
+**외부 패널**을 향한 표준 authorization-code + PKCE(S256) 클라이언트다
+(제공자는 설정하는 것이지 호스팅하는 것이 아니다):
+
+1. `GET /auth/oauth/begin` —— arona가 일회용 `state`와 PKCE verifier를
+   발급해(서버 보관, TTL 제한) 패널의 authorize 엔드포인트로 리다이렉트한다.
+2. 패널이 사용자를 인증한 뒤 `GET /auth/oauth/callback?code=…&state=…`
+   로 되돌려 보낸다.
+3. arona는 token 엔드포인트에서 코드를 교환하고 userinfo 엔드포인트를
+   읽어 패널 신원을 로컬 계정에 대응시킨다. 응답은 `auth.login`과 같은
+   모양(`access_token`, `refresh_token`, `user`)이라 클라이언트에 새로운
+   토큰 처리가 필요 없다.
+
+신원 클레임은 `email`(OIDC 표준)이고, 다음으로 이메일 형태의
+`preferred_username`을 쓴다. 불투명한 `sub`만 있는 것은 절대 받지 않는다.
+알려지지 않은 신원은 `allow_signup`(기본 `true`)이 허용하는 한 자동
+개설된다. **빈 인스턴스의 첫 릴레이 로그인은 administrators 그룹으로
+부트스트랩된다** —— local 모드의 첫 등록과 완전히 동일하다.
+
+### 신뢰된 발급자 릴레이 (`[[auth.trusted_issuers]]`)
+
+API 쪽의 등가물(evernight 게이트웨이 방식): 그 패널의 **kirino ACCESS
+토큰**을 arona가 JWT를 받는 모든 베어러 면(`/v1/*`와 JSON-RPC 면)에서
+직접 받아들인다. 각 행은 발급자(`iss`, 강제 검증), 공유 검증 시크릿,
+선택적 `audience`를 선언한다. 검증은 발급자별 fail-closed다 —— 다른
+발급자(또는 발급자 없음)의 토큰은 모두 거부되며, refresh 토큰은 결코
+세션 베어러가 될 수 없다. 패널 사용자의 `username` 클레임은 이메일이어야
+한다(arona의 사용자 면은 이메일이 기본 키다). 신원은 **로컬** 계정에
+대응되며, 알려지지 않은 신원은 해당 행의 `allow_signup`에 따라 개설된다.
+
+### 디스커버리와 자세 보고
+
+인증 없는 `auth.methods` JSON-RPC 메서드는 어떤 문이 존재하는지 보고하고
+(`password`, `oauth {begin_url, provider}`, `api_keys`,
+`trusted_issuers` —— 불리언과 이름만), `system.status`는 같은 사실을 담은
+추가 `auth` 블록을 운영에게 제공한다.
+
 ## JWT 세션
 
 세션은 `kirino_session` token 관리자가 발급하는 JWT access/refresh token 쌍을 사용합니다:

@@ -78,9 +78,10 @@ token、デプロイ進捗、realtime イベントは WebSocket ソケットで�
 
 | メソッド | 認証 | パラメータ | 説明 |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`、`password`、`name?` | アカウントを登録します。登録が開放されている間（`ARONA_REGISTRATION_OPEN`）のみ許可されます。最初に登録したユーザーが admin になります。`auth.login` と同じtokenレスポンス（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）を返します。 |
-| `auth.login` | public | `email`、`password` | ログインします。`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, is_admin }`）を返します。IP とアカウントごとにレート制限されます。 |
+| `auth.register` | public | `email`、`password`、`name?` | アカウントを登録します。登録が開放されている間（`ARONA_REGISTRATION_OPEN`）のみ許可されます。最初に登録したユーザーが admin になります。`auth.login` と同じtokenレスポンス（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）を返します。  `auth.mode = public` ではこのメソッドは閉鎖され、`AUTH_ERROR` を返す（パスワード認証は無効）。 |
+| `auth.login` | public | `email`、`password` | ログインします。`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, is_admin }`）を返します。IP とアカウントごとにレート制限されます。  `auth.mode = public` ではこのメソッドは閉鎖され、`AUTH_ERROR` を返す（パスワード認証は無効）。 |
 | `auth.refresh` | public | `refresh_token` | refresh tokenを新しいaccess token（と新しい refresh token）と交換します。再利用または期限切れの refresh tokenは `AUTH_ERROR` で拒否されます。 |
+| `auth.methods` | 公開 | — | 存在する認証ドアの問い合わせ：`{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [名前] }`。ブール値と名前のみ。 |
 | `auth.me` | JWT | — | 現在のユーザープロファイル: `{ "id", "email", "name" }`。 |
 
 ## Keys

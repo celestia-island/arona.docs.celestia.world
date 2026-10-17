@@ -1,16 +1,63 @@
 ---
 title: "配置"
-description: "Arona 服务器读取的全部环境变量参考，含默认值与语义。"
+description: "Arona 服务器的固定 TOML 配置文件与全部环境变量参考，含默认值与语义。"
 ---
 
 # 配置
+Arona 的配置以**固定 TOML 文件**为主载体，环境变量作为逐键覆盖。每个键的解析顺序为 **显式环境变量 → TOML 值 → 内置默认值**：既有的 env 驱动部署（systemd 单元、docker-compose、`.env.example`）行为不变，新部署则可以把所有配置钉在一个文件里。
 
-Arona **完全通过环境变量**配置，在进程启动时读取一次（`Config::load` 位于
-`packages/core/src/config.rs`，另有少量在首次使用时读取）。没有配置文件：修改
-变量后重启服务器即可生效。
+## 配置文件
 
-本页是服务器代码读取的所有配置的参考，按关注点分组。为完整性也包含了仅 mock
-使用和运行时的变量。
+文件按以下顺序发现——先命中者生效：
+1. `ARONA_CONFIG` 指定的路径（必须存在；缺失或不可读是启动级致命错误）；
+2. 工作目录下的 `./arona.toml`；
+3. `/etc/arona/arona.toml`；
+4. 都没有 → 仅环境变量的传统模式。
+
+这里**没有静默回退**：发现的文件解析失败、携带未知键、或含未解析的 `${VAR}` 插值，都会以致命错误中止启动。`${VAR}` / `${VAR:-default}` 插值让机密留在环境或 systemd `LoadCredential` 中，文件本身只保存引用。仓库根目录附带注释完整的示例文件 `arona.toml.example`。
+
+布尔键（`registration_open`、`writeback`、`backend_local`、`mistralrs_force`、`mock`）在文件里必须是 TOML 布尔值；其 env 形态沿用下文记录的 truthy 字符串 / 存在即生效语义。`ARONA_RUSTFS_ACCESS_KEY_FILE` / `ARONA_RUSTFS_SECRET_KEY_FILE` 变体仍仅接受环境变量。
+
+auth 节还承载两个**结构化**子块（无 env 形态）：`[auth.oauth]`（OAuth2 转接提供方——端点 URL、客户端凭据、scope、开号策略）与 `[[auth.trusted_issuers]]`（其 kirino ACCESS 令牌可被直接接受的面板——签发者、共享密钥、可选 audience）。两者都在启动时校验，详见[认证与安全](./auth-security.md)。
+
+| 环境变量 | TOML 键 |
+| --- | --- |
+| `ARONA_HOST` | `server.host` |
+| `ARONA_PORT` | `server.port` |
+| `ARONA_DATA_DIR` | `server.data_dir` |
+| `DATABASE_URL` | `database.url` |
+| `ARONA_DB_MAX_CONNECTIONS` | `database.max_connections` |
+| `JWT_SECRET` | `auth.jwt_secret` |
+| `ARONA_ADMIN_TOKEN` | `auth.admin_token` |
+| `ARONA_AGENT_TOKEN` | `auth.agent_token` |
+| `ARONA_REGISTRATION_OPEN` | `auth.registration_open` |
+| `ARONA_API_RATE_LIMIT_RPM` | `auth.rate_limit_rpm` |
+| `ARONA_AUTH_MODE` | `auth.mode` |
+| `ARONA_CONFIG_KEY` | `catalog.config_key` |
+| `ARONA_MEMORY_URL` | `memory.url` |
+| `ARONA_MEMORY_TOKEN` | `memory.token` |
+| `ARONA_MEMORY_WRITEBACK` | `memory.writeback` |
+| `ARONA_MEMORY_SCOPE` | `memory.scope` |
+| `ARONA_MEDIA_URL_TTL_SECS` | `media.url_ttl_secs` |
+| `ARONA_MEDIA_BUCKET` | `media.bucket` |
+| `ARONA_MEDIA_BACKEND_LOCAL` | `media.backend_local` |
+| `ARONA_RUSTFS_ENDPOINT` | `storage.endpoint` |
+| `ARONA_RUSTFS_PUBLIC_ENDPOINT` | `storage.public_endpoint` |
+| `ARONA_RUSTFS_REGION` | `storage.region` |
+| `ARONA_RUSTFS_ACCESS_KEY` | `storage.access_key` |
+| `ARONA_RUSTFS_SECRET_KEY` | `storage.secret_key` |
+| `ARONA_EVERNIGHT_URL` | `bridge.evernight_url` |
+| `ARONA_AGENT_NAME` | `agent.name` |
+| `ARONA_PANEL_URL` | `agent.panel_url` |
+| `ARONA_AGENT_BIND_ADDR` | `agent.bind_addr` |
+| `ARONA_MISTRALRS` | `agent.mistralrs_force` |
+| `ARONA_POINTS_PER_USD` | `billing.points_per_usd` |
+| `MOCK_MODE` | `dev.mock` |
+| `MOCK_SEED_PATH` | `dev.seed_path` |
+| `HF_ENDPOINT` | `downloads.hf_endpoint` |
+| `GITHUB_TOKEN` | `downloads.github_token` |
+
+本页其余部分是**环境变量参考**，同时作为映射后 TOML 键的语义参考（同名、同默认值）。
 
 ## 参考表
 
@@ -65,7 +112,7 @@ set MOCK_MODE=1 only for local development.
 
 ### `ARONA_HOST` / `ARONA_PORT`
 
-gateway 的绑定地址与端口。为兼容旧版会回退到 `SHITTIM_CHEST_HOST` /
+gateway 的绑定地址与端口。为兼容旧版会回退到 `SHITTIM_CHEST_HOST` /（注意顺序：配置文件的 `server.host`/`server.port` 排在旧别名之前，只有正统的 `ARONA_HOST`/`ARONA_PORT` 才排在文件之前）
 `SHITTIM_CHEST_PORT`；最终默认值为 `0.0.0.0:8420`。
 
 ### `ARONA_DATA_DIR`
@@ -195,5 +242,5 @@ GitHub 模型注册表（`gh:` 源）用于 API 访问的访问 token。默认�
 | 记忆写回 | 开启 |
 | 注册 | 关闭 |
 
-<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
+<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/config/file.rs (discovery, interpolation, KEY_MAP), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
 <!-- note: beyond the fact sheet, four more variables are read by the server code and were added to the table for completeness: ARONA_EVERNIGHT_URL (backends/bridge.rs:76, default ws://127.0.0.1:3001/ws), ARONA_MISTRALRS (pipeline.rs:136, presence semantics), ARONA_AGENT_BIND_ADDR (orchestration/llama_cpp.rs:437-438, default 127.0.0.1 — the bind of the spawned llama.cpp engine, distinct from the agent HTTP API which stays hardcoded to 0.0.0.0:5790, agent/src/main.rs:109), and HF_ENDPOINT (models/download.rs:30-40). -->

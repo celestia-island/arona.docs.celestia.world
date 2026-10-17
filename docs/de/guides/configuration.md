@@ -1,19 +1,63 @@
 ---
 title: "Konfiguration"
-description: "Referenz für jede vom Arona-Server gelesene Umgebungsvariable, mit Standardwerten und Semantik."
+description: "Referenz für die feste TOML-Konfigurationsdatei und jede Umgebungsvariable, die der Arona-Server liest, mit Defaults und Semantik."
 ---
 
 # Konfiguration
+Arona liest seine Konfiguration aus einer **festen TOML-Datei**, Umgebungsvariablen wirken als Überschreibung pro Schlüssel. Jeder Schlüssel wird aufgelöst als **explizite Umgebungsvariable → TOML-Wert → eingebauter Default**; bestehende env-getriebene Deployments (systemd-Units, docker-compose, `.env.example`) verhalten sich unverändert, neue Deployments können alles in einer Datei festnageln.
 
-Arona wird **vollständig über Umgebungsvariablen** konfiguriert, die einmal
-beim Prozessstart gelesen werden (`Config::load` in
-`packages/core/src/config.rs`, einige wenige erst bei der ersten Verwendung).
-Es gibt keine Konfigurationsdatei: Ändern Sie eine Variable und starten Sie den
-Server neu, damit sie wirksam wird.
+## Die Konfigurationsdatei
 
-Diese Seite ist die Referenz für alles, was der Servercode liest, gruppiert
-nach Themenbereich. Nur-Mock- und Laufzeitvariablen sind der Vollständigkeit
-halber enthalten.
+Die Datei wird in dieser Reihenfolge gesucht — der erste Treffer gewinnt:
+1. der Pfad in `ARONA_CONFIG` (muss existieren; eine fehlende oder unlesbare Datei ist ein fataler Startfehler);
+2. `./arona.toml` im Arbeitsverzeichnis;
+3. `/etc/arona/arona.toml`;
+4. keine Datei gefunden → rein environment-basierter Altmodus.
+
+Es gibt **keinen stillen Fallback**: Eine gefundene Datei, die nicht parst, einen unbekannten Schlüssel enthält oder eine unaufgelöste `${VAR}`-Interpolation aufweist, bricht den Start mit einem fatalen Fehler ab. Mit `${VAR}` / `${VAR:-default}`-Interpolation bleiben Geheimnisse in der Umgebung oder einem systemd `LoadCredential`, während die Datei nur Verweise enthält. Eine kommentierte Vorlage liegt als `arona.toml.example` im Repository-Wurzelverzeichnis.
+
+Boolesche Schlüssel (`registration_open`, `writeback`, `backend_local`, `mistralrs_force`, `mock`) müssen in der Datei TOML-Booleans sein; ihre Env-Formen behalten die unten dokumentierte Truthy-String- bzw. Präsenz-Semantik. Die Varianten `ARONA_RUSTFS_ACCESS_KEY_FILE` / `ARONA_RUSTFS_SECRET_KEY_FILE` bleiben rein environment-basiert.
+
+Der auth-Abschnitt trägt zusätzlich zwei **strukturwertige** Blöcke ohne Env-Form: `[auth.oauth]` (der OAuth2-Relay-Anbieter — Endpunkt-URLs, Client-Credentials, Scopes, Signup-Politik) und `[[auth.trusted_issuers]]` (Panels, deren kirino-ACCESS-Token arona direkt akzeptiert — Aussteller, Shared Secret, optionales audience). Beide werden beim Start validiert und in [Authentifizierung & Sicherheit](./auth-security.md) dokumentiert.
+
+| Umgebungsvariable | TOML-Schlüssel |
+| --- | --- |
+| `ARONA_HOST` | `server.host` |
+| `ARONA_PORT` | `server.port` |
+| `ARONA_DATA_DIR` | `server.data_dir` |
+| `DATABASE_URL` | `database.url` |
+| `ARONA_DB_MAX_CONNECTIONS` | `database.max_connections` |
+| `JWT_SECRET` | `auth.jwt_secret` |
+| `ARONA_ADMIN_TOKEN` | `auth.admin_token` |
+| `ARONA_AGENT_TOKEN` | `auth.agent_token` |
+| `ARONA_REGISTRATION_OPEN` | `auth.registration_open` |
+| `ARONA_API_RATE_LIMIT_RPM` | `auth.rate_limit_rpm` |
+| `ARONA_AUTH_MODE` | `auth.mode` |
+| `ARONA_CONFIG_KEY` | `catalog.config_key` |
+| `ARONA_MEMORY_URL` | `memory.url` |
+| `ARONA_MEMORY_TOKEN` | `memory.token` |
+| `ARONA_MEMORY_WRITEBACK` | `memory.writeback` |
+| `ARONA_MEMORY_SCOPE` | `memory.scope` |
+| `ARONA_MEDIA_URL_TTL_SECS` | `media.url_ttl_secs` |
+| `ARONA_MEDIA_BUCKET` | `media.bucket` |
+| `ARONA_MEDIA_BACKEND_LOCAL` | `media.backend_local` |
+| `ARONA_RUSTFS_ENDPOINT` | `storage.endpoint` |
+| `ARONA_RUSTFS_PUBLIC_ENDPOINT` | `storage.public_endpoint` |
+| `ARONA_RUSTFS_REGION` | `storage.region` |
+| `ARONA_RUSTFS_ACCESS_KEY` | `storage.access_key` |
+| `ARONA_RUSTFS_SECRET_KEY` | `storage.secret_key` |
+| `ARONA_EVERNIGHT_URL` | `bridge.evernight_url` |
+| `ARONA_AGENT_NAME` | `agent.name` |
+| `ARONA_PANEL_URL` | `agent.panel_url` |
+| `ARONA_AGENT_BIND_ADDR` | `agent.bind_addr` |
+| `ARONA_MISTRALRS` | `agent.mistralrs_force` |
+| `ARONA_POINTS_PER_USD` | `billing.points_per_usd` |
+| `MOCK_MODE` | `dev.mock` |
+| `MOCK_SEED_PATH` | `dev.seed_path` |
+| `HF_ENDPOINT` | `downloads.hf_endpoint` |
+| `GITHUB_TOKEN` | `downloads.github_token` |
+
+Der Rest dieser Seite ist die **Umgebungsvariablen-Referenz**; sie dient zugleich als Semantik-Referenz der gemappten TOML-Schlüssel (gleiche Namen, gleiche Defaults).
 
 ## Referenztabelle
 
@@ -71,7 +115,7 @@ Verwenden Sie einen langen, zufälligen Wert (z. B. `openssl rand -hex 32`).
 ### `ARONA_HOST` / `ARONA_PORT`
 
 Bind-Adresse und -Port für das Gateway. Aus Kompatibilitätsgründen fallen sie
-auf `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT` zurück; die endgültigen
+auf `SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT` zurück; die endgültigen (Reihenfolge: `server.host`/`server.port` aus der Konfigurationsdatei rangieren vor den Legacy-Aliasen — nur das kanonische `ARONA_HOST`/`ARONA_PORT` rangiert vor der Datei)
 Standardwerte sind `0.0.0.0:8420`.
 
 ### `ARONA_DATA_DIR`
@@ -220,5 +264,5 @@ Semantik (`error`/`warn`/`info`/`debug`/`trace`, Überschreibungen pro Target).
 | Memory-Writeback | an |
 | Registrierung | geschlossen |
 
-<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
+<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/config/file.rs (discovery, interpolation, KEY_MAP), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
 <!-- note: beyond the fact sheet, four more variables are read by the server code and were added to the table for completeness: ARONA_EVERNIGHT_URL (backends/bridge.rs:76, default ws://127.0.0.1:3001/ws), ARONA_MISTRALRS (pipeline.rs:136, presence semantics), ARONA_AGENT_BIND_ADDR (orchestration/llama_cpp.rs:437-438, default 127.0.0.1 — the bind of the spawned llama.cpp engine, distinct from the agent HTTP API which stays hardcoded to 0.0.0.0:5790, agent/src/main.rs:109), and HF_ENDPOINT (models/download.rs:30-40). -->

@@ -79,9 +79,10 @@ Token, 배포 진행, realtime 이벤트는 WebSocket 소켓에서 **전달되�
 
 | 메서드 | Auth | Params | 설명 |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | 계정을 등록합니다. 가입이 열린 동안에만(`ARONA_REGISTRATION_OPEN`) 허용됩니다. 첫 번째 등록 사용자가 admin이 됩니다. `auth.login`과 동일한 token 응답(`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`)을 반환합니다. |
-| `auth.login` | public | `email`, `password` | 로그인. `access_token`, `refresh_token`, `token_type`, `expires_in`, `user`(`{ id, email, name, is_admin }`)를 반환합니다. IP 및 계정별 rate-limited. |
+| `auth.register` | public | `email`, `password`, `name?` | 계정을 등록합니다. 가입이 열린 동안에만(`ARONA_REGISTRATION_OPEN`) 허용됩니다. 첫 번째 등록 사용자가 admin이 됩니다. `auth.login`과 동일한 token 응답(`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`)을 반환합니다.  `auth.mode = public`에서는 이 메서드가 닫히고 `AUTH_ERROR`를 반환한다(비밀번호 인증 비활성). |
+| `auth.login` | public | `email`, `password` | 로그인. `access_token`, `refresh_token`, `token_type`, `expires_in`, `user`(`{ id, email, name, is_admin }`)를 반환합니다. IP 및 계정별 rate-limited.  `auth.mode = public`에서는 이 메서드가 닫히고 `AUTH_ERROR`를 반환한다(비밀번호 인증 비활성). |
 | `auth.refresh` | public | `refresh_token` | Refresh token을 새 access token(및 새 refresh token)으로 교환합니다. 재사용되거나 만료된 refresh token은 `AUTH_ERROR`로 거부됩니다. |
+| `auth.methods` | 공개 | — | 어떤 인증 문이 존재하는지: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [이름] }`. 불리언과 이름만. |
 | `auth.me` | JWT | — | 현재 사용자 프로필: `{ "id", "email", "name" }`. |
 
 ## Keys

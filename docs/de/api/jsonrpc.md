@@ -128,9 +128,10 @@ hinter dieser Legende finden Sie unter
 
 | Methode | Auth | Parameter | Beschreibung |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | Registriert ein Konto. Nur erlaubt, solange die Registrierung geöffnet ist (`ARONA_REGISTRATION_OPEN`); der erste registrierte Benutzer wird zum Admin. Gibt dieselbe Token-Antwort wie `auth.login` zurück (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`). |
-| `auth.login` | public | `email`, `password` | Meldet sich an. Gibt `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`) zurück. Ratenbegrenzt pro IP und Konto. |
+| `auth.register` | public | `email`, `password`, `name?` | Registriert ein Konto. Nur erlaubt, solange die Registrierung geöffnet ist (`ARONA_REGISTRATION_OPEN`); der erste registrierte Benutzer wird zum Admin. Gibt dieselbe Token-Antwort wie `auth.login` zurück (`access_token`, `refresh_token`, `token_type`, `expires_in`, `user`).  Im Modus `auth.mode = public` schlägt diese Methode geschlossen mit `AUTH_ERROR` fehl (Passwortauthentifizierung deaktiviert). |
+| `auth.login` | public | `email`, `password` | Meldet sich an. Gibt `access_token`, `refresh_token`, `token_type`, `expires_in`, `user` (`{ id, email, name, is_admin }`) zurück. Ratenbegrenzt pro IP und Konto.  Im Modus `auth.mode = public` schlägt diese Methode geschlossen mit `AUTH_ERROR` fehl (Passwortauthentifizierung deaktiviert). |
 | `auth.refresh` | public | `refresh_token` | Tauscht ein Refresh-Token gegen ein frisches Access-Token (und ein neues Refresh-Token). Wiederverwendete oder abgelaufene Refresh-Tokens werden mit `AUTH_ERROR` abgelehnt. |
+| `auth.methods` | öffentlich | — | Welche Auth-Türen existieren: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [Namen] }`. Nur Boolesche Werte und Namen. |
 | `auth.me` | JWT | — | Aktuelles Benutzerprofil: `{ "id", "email", "name" }`. |
 
 ## Keys

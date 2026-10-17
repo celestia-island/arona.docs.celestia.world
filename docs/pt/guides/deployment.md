@@ -71,6 +71,8 @@ Dockerfile compilam.
 
 ## Configuração
 
+A configuração tem um **arquivo TOML fixo** como suporte principal (descoberto em `./arona.toml` ou `/etc/arona/arona.toml`, ou fixado com `ARONA_CONFIG`), com variáveis de ambiente como substituições por chave — veja a [referência de configuração](./configuration.md) e `arona.toml.example`. Abaixo está o mínimo para operar apenas com env.
+
 Toda a configuração é por variáveis de ambiente; a [referência de
 configuração](./configuration.md) documenta cada variável, e `.env.example` na
 raiz do repositório é um ponto de partida funcional. O conjunto mínimo:

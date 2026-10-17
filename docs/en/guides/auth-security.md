@@ -11,6 +11,64 @@ interactive clients (the chat + admin UI, RPC calls) and **API keys**
 guards the administrative surfaces. This page documents the mechanics, the
 security model, and the known low-risk leftovers from a security audit.
 
+## Public mode & relay login
+
+Arona ships two authentication postures, selected by `auth.mode` in the
+[TOML config](./configuration.md):
+
+- **`local`** (default) — the historical behavior. `auth.login` /
+  `auth.register` answer email+password on the JSON-RPC plane. Fine
+  behind a trusted network or a strict reverse proxy.
+- **`public`** — the internet-facing posture. The password arms fail
+  closed with an error pointing at the relay doors; interactive identity
+  arrives **only** through the relays below, and programmatic callers
+  keep using API keys unchanged. The server refuses to start in `public`
+  mode without at least one relay door configured — an operator who
+  forgets both would have locked every human out.
+
+Two doors exist, and arona is never its own identity provider:
+
+### OAuth2 relay (`[auth.oauth]`)
+
+A standard **authorization-code + PKCE (S256)** client against an
+external panel (the provider is configured, never hosted):
+
+1. `GET /auth/oauth/begin` — arona mints a single-use `state` plus a
+   PKCE verifier (kept server-side, TTL-bounded) and redirects to the
+   panel's authorize endpoint.
+2. The panel authenticates the user and redirects back to
+   `GET /auth/oauth/callback?code=…&state=…`.
+3. arona exchanges the code at the token endpoint, reads the userinfo
+   endpoint, and maps the panel identity onto a local account. The
+   response is the same shape `auth.login` returns (`access_token`,
+   `refresh_token`, `user`), so clients need no new token handling.
+
+The identity claim is `email` (OIDC standard), falling back to
+`preferred_username` when it looks like an email; a bare opaque `sub` is
+never accepted. Unknown identities provision while `allow_signup` holds
+(default `true`); the **first relay login on an empty instance
+bootstraps into the administrators group** — exactly like the first
+registration did in local mode.
+
+### Trusted-issuer relay (`[[auth.trusted_issuers]]`)
+
+The API-door equivalent (the evernight-gateway pattern): panels whose
+**kirino ACCESS tokens** arona accepts directly on every bearer surface
+(`/v1/*` where JWTs are accepted, and the JSON-RPC plane). Each row
+names the issuer (`iss`, enforced), the shared verification secret and
+an optional `audience`; verification is fail-closed per issuer — a token
+from any other issuer, or none, is rejected, and refresh tokens are
+never session bearers. The panel user's `username` claim must be an
+email (arona's user plane keys on it); it maps onto the LOCAL account,
+provisioning per the row's `allow_signup`.
+
+### Discovery & posture reporting
+
+The unauthenticated `auth.methods` JSON-RPC method reports which doors
+exist (`password`, `oauth {begin_url, provider}`, `api_keys`,
+`trusted_issuers` — booleans and names only), and `system.status`
+carries an additive `auth` block with the same facts for operators.
+
 ## JWT sessions
 
 Sessions use JWT access/refresh token pairs issued by the `kirino_session`

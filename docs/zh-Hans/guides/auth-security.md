@@ -10,6 +10,52 @@ Arona 在两条轨道上认证调用方：面向交互客户端（聊天 + 管�
 （`arona-…`）。一个独立的 admin token 守护管理面。本页记录机制、安全模型，以及
 安全审计中已知的低风险遗留项。
 
+## 公网模式与转接登录
+
+Arona 提供两种认证姿态，由 [TOML 配置](./configuration.md)中的 `auth.mode` 选择：
+
+- **`local`**（默认）—— 传统行为。`auth.login` / `auth.register` 在
+  JSON-RPC 面上接受邮箱+密码。适合可信网络或严格反向代理之后。
+- **`public`** —— 面向公网的姿态。密码通道整体关闭（返回指向转接入口的
+  错误）；交互式身份**只能**经下方转接通道进入，程序化调用继续用 API key，
+  行为不变。`public` 模式下未配置任何转接入口时服务器拒绝启动——两个入口
+  都忘了配的操作者等于把所有人锁在门外。
+
+存在两扇门，而 arona 永远不做自己的身份提供方：
+
+### OAuth2 转接（`[auth.oauth]`）
+
+面向**外部面板**的标准 authorization-code + PKCE（S256）客户端（提供方是
+配置出来的，不是自托管的）：
+
+1. `GET /auth/oauth/begin` —— arona 生成一次性 `state` 与 PKCE verifier
+   （保存在服务端、有 TTL），重定向到面板的 authorize 端点。
+2. 面板完成用户认证后重定向回 `GET /auth/oauth/callback?code=…&state=…`。
+3. arona 在 token 端点换取令牌、读取 userinfo 端点、把面板身份映射到本地
+   账户。响应与 `auth.login` 同构（`access_token`、`refresh_token`、
+   `user`），客户端无需新的令牌处理逻辑。
+
+身份声明取 `email`（OIDC 标准），其次取形似邮箱的 `preferred_username`；
+裸的不透明 `sub` 一律不接受。未知身份在 `allow_signup`（默认 `true`）允许
+时自动开号；**空实例上的第一次转接登录直接引导为 administrators 组成员**
+——与 local 模式的首次注册完全一致。
+
+### 可信签发者转接（`[[auth.trusted_issuers]]`）
+
+API 侧的等价物（evernight 网关模式）：其 **kirino ACCESS 令牌**可以被
+arona 在所有接受 JWT 的持有者面（`/v1/*` 与 JSON-RPC 面）直接接受的面板。
+每行声明签发者（`iss`，强制校验）、共享验证密钥与可选 `audience`；校验按
+签发者 fail-closed——来自其他签发者（或无签发者）的令牌一律拒绝，refresh
+令牌永远不能当会话持有者凭据。面板用户的 `username` 声明必须是邮箱
+（arona 的用户面以邮箱为主键）；它映射到**本地**账户，未知身份按该行的
+`allow_signup` 决定是否开号。
+
+### 发现与姿态上报
+
+未认证的 `auth.methods` JSON-RPC 方法上报存在哪些门（`password`、
+`oauth {begin_url, provider}`、`api_keys`、`trusted_issuers` —— 仅布尔与
+名字），`system.status` 携带同样事实的增量 `auth` 块供运维查看。
+
 ## JWT 会话
 
 会话使用 `kirino_session` token 管理器签发的 JWT access/refresh token 对：

@@ -12,6 +12,72 @@ OpenAI. Un token admin séparé garde les surfaces administratives. Cette page
 documente la mécanique, le modèle de sécurité, et les reliquats connus à faible
 risque d'un audit de sécurité.
 
+## Mode public & connexion relais
+
+Arona livre deux postures d'authentification, choisies via `auth.mode`
+dans la [configuration TOML](./configuration.md) :
+
+- **`local`** (défaut) — le comportement historique. `auth.login` /
+  `auth.register` acceptent e-mail+mot de passe sur le plan JSON-RPC.
+  Acceptable derrière un réseau de confiance ou un reverse proxy
+  strict.
+- **`public`** — la posture tournée vers Internet. Les bras mot de
+  passe échouent fermé (avec une erreur pointant vers les portes
+  relais) ; l'identité interactive n'arrive **que** par les relais
+  ci-dessous, et les appelants programmatiques continuent d'utiliser
+  les clés API sans changement. En mode `public`, le serveur refuse de
+  démarrer sans au moins une porte relais configurée — l'opérateur qui
+  oublie les deux aurait verrouillé tout le monde dehors.
+
+Deux portes existent, et arona n'est jamais son propre fournisseur
+d'identité :
+
+### Relais OAuth2 (`[auth.oauth]`)
+
+Un client standard authorization-code + PKCE (S256) auprès d'un panneau
+externe (le fournisseur est configuré, jamais hébergé) :
+
+1. `GET /auth/oauth/begin` — arona fabrique un `state` à usage unique
+   plus un vérificateur PKCE (gardé côté serveur, borné en TTL) et
+   redirige vers le point d'autorisation du panneau.
+2. Le panneau authentifie l'utilisateur et rappelle sur
+   `GET /auth/oauth/callback?code=…&state=…`.
+3. arona échange le code au point de jeton, lit le point userinfo et
+   mappe l'identité du panneau sur un compte local. La réponse a la
+   même forme que `auth.login` (`access_token`, `refresh_token`,
+   `user`) — les clients n'ont aucun traitement de jeton nouveau à
+   écrire.
+
+Le claim d'identité est `email` (standard OIDC), à défaut
+`preferred_username` lorsqu'il ressemble à un e-mail ; un `sub` opaque
+nu n'est jamais accepté. Les identités inconnues sont provisionnées
+tant que `allow_signup` tient (défaut `true`) ; la **première
+connexion relais sur une instance vide démarre dans le groupe
+administrators** — exactement comme le premier enregistrement en mode
+local.
+
+### Relais d'émetteurs de confiance (`[[auth.trusted_issuers]]`)
+
+L'équivalent côté API (le modèle evernight-gateway) : des panneaux dont
+les **jetons kirino ACCESS** sont acceptés directement par arona sur
+toute surface bearer (`/v1/*` où les JWT sont acceptés, et le plan
+JSON-RPC). Chaque ligne nomme l'émetteur (`iss`, imposé), le secret de
+vérification partagé et un `audience` optionnel ; la vérification est
+fail-closed par émetteur — un jeton d'un autre émetteur (ou sans
+émetteur) est rejeté, et un refresh token n'est jamais un bearer de
+session. Le claim `username` de l'utilisateur du panneau doit être un
+e-mail (le plan utilisateur d'arona se fonde sur l'e-mail) ; il est
+mappé sur le compte LOCAL, le provisionnement des identités inconnues
+suit le `allow_signup` de la ligne.
+
+### Découverte & rapport de posture
+
+La méthode JSON-RPC non authentifiée `auth.methods` rapporte quelles
+portes existent (`password`, `oauth {begin_url, provider}`,
+`api_keys`, `trusted_issuers` — booléens et noms seulement), et
+`system.status` transporte un bloc `auth` additif avec les mêmes faits
+pour les opérateurs.
+
 ## Sessions JWT
 
 Les sessions utilisent des paires de tokens JWT access/refresh émises par le

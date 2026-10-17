@@ -12,6 +12,67 @@ separado protege as superfícies administrativas. Esta página documenta a
 mecânica, o modelo de segurança e os leftovers conhecidos de baixo risco de uma
 auditoria de segurança.
 
+## Modo público & login por retransmissão
+
+O Arona oferece duas posturas de autenticação, escolhidas com `auth.mode`
+na [configuração TOML](./configuration.md):
+
+- **`local`** (padrão) — o comportamento histórico. `auth.login` /
+  `auth.register` aceitam e-mail+senha no plano JSON-RPC. Aceitável
+  atrás de uma rede confiável ou um proxy reverso estrito.
+- **`public`** — a postura voltada para a internet. Os braços de senha
+  falham fechados (com um erro apontando para as portas de
+  retransmissão); a identidade interativa chega **apenas** pelos
+  retransmissores abaixo, e chamadores programáticos continuam usando
+  chaves de API sem mudança. No modo `public` o servidor recusa
+  iniciar sem ao menos uma porta configurada — o operador que esquecer
+  ambas teria trancado todo mundo do lado de fora.
+
+Existem duas portas, e o arona nunca é o próprio provedor de identidade:
+
+### Retransmissão OAuth2 (`[auth.oauth]`)
+
+Um cliente padrão authorization-code + PKCE (S256) contra um painel
+externo (o provedor é configurado, nunca hospedado):
+
+1. `GET /auth/oauth/begin` — o arona cunha um `state` de uso único mais
+   um verificador PKCE (guardado no servidor, com TTL) e redireciona
+   para o endpoint de autorização do painel.
+2. O painel autentica o usuário e redireciona de volta para
+   `GET /auth/oauth/callback?code=…&state=…`.
+3. O arona troca o código no endpoint de token, lê o endpoint userinfo
+   e mapeia a identidade do painel numa conta local. A resposta tem a
+   mesma forma do `auth.login` (`access_token`, `refresh_token`,
+   `user`), então clientes não precisam de tratamento novo de tokens.
+
+O claim de identidade é `email` (padrão OIDC), com fallback para
+`preferred_username` quando parece um e-mail; um `sub` opaco nu nunca
+é aceito. Identidades desconhecidas são provisionadas enquanto
+`allow_signup` valer (padrão `true`); o **primeiro login por
+retransmissão numa instância vazia inicializa no grupo
+administrators** — exatamente como o primeiro registro no modo local.
+
+### Retransmissão de emissores confiáveis (`[[auth.trusted_issuers]]`)
+
+O equivalente do lado da API (o padrão evernight-gateway): painéis cujos
+**tokens kirino ACCESS** o arona aceita diretamente em toda superfície
+bearer (`/v1/*` onde JWTs são aceitos, e o plano JSON-RPC). Cada linha
+nomeia o emissor (`iss`, obrigatório), o segredo compartilhado de
+verificação e um `audience` opcional; a verificação é fail-closed por
+emissor — um token de outro emissor (ou sem emissor) é rejeitado, e um
+refresh token nunca é um bearer de sessão. O claim `username` do
+usuário do painel deve ser um e-mail (o plano de usuários do arona é
+chaveado por e-mail); ele mapeia para a conta LOCAL, e o
+provisionamento de identidades desconhecidas segue o `allow_signup`
+da linha.
+
+### Descoberta & relatório de postura
+
+O método JSON-RPC sem autenticação `auth.methods` relata quais portas
+existem (`password`, `oauth {begin_url, provider}`, `api_keys`,
+`trusted_issuers` — apenas booleanos e nomes), e o `system.status`
+carrega um bloco `auth` aditivo com os mesmos fatos para operadores.
+
 ## Sessões JWT
 
 Sessões usam pares de tokens JWT access/refresh emitidos pelo token manager

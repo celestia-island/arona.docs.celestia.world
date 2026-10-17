@@ -12,6 +12,69 @@ de admin separado protege las superficies administrativas. Esta página
 documenta la mecánica, el modelo de seguridad y los restos conocidos de bajo
 riesgo de una auditoría de seguridad.
 
+## Modo público y acceso por relé
+
+Arona ofrece dos posturas de autenticación, elegidas con `auth.mode` en
+la [configuración TOML](./configuration.md):
+
+- **`local`** (predeterminado) — el comportamiento histórico.
+  `auth.login` / `auth.register` aceptan correo+contraseña en el plano
+  JSON-RPC. Aceptable tras una red de confianza o un proxy inverso
+  estricto.
+- **`public`** — la postura orientada a Internet. Los brazos de
+  contraseña fallan cerrados (con un error que señala las puertas de
+  relé); la identidad interactiva llega **solo** a través de los relés
+  de abajo, y quienes llaman por programa siguen usando claves API sin
+  cambios. En modo `public` el servidor se niega a arrancar sin al
+  menos una puerta de relé configurada — el operador que olvide ambas
+  habría encerrado a todos fuera.
+
+Existen dos puertas, y arona nunca es su propio proveedor de identidad:
+
+### Relé OAuth2 (`[auth.oauth]`)
+
+Un cliente estándar authorization-code + PKCE (S256) contra un panel
+externo (el proveedor se configura, nunca se aloja):
+
+1. `GET /auth/oauth/begin` — arona acuña un `state` de un solo uso más
+   un verificador PKCE (guardado en el servidor, con TTL) y redirige
+   al endpoint de autorización del panel.
+2. El panel autentica al usuario y redirige de vuelta a
+   `GET /auth/oauth/callback?code=…&state=…`.
+3. arona canjea el código en el endpoint de token, lee el endpoint de
+   userinfo y mapea la identidad del panel a una cuenta local. La
+   respuesta tiene la misma forma que `auth.login` (`access_token`,
+   `refresh_token`, `user`), así que los clientes no necesitan manejo
+   nuevo de tokens.
+
+El claim de identidad es `email` (estándar OIDC), con fallback a
+`preferred_username` cuando parece un correo; un `sub` opaco desnudo
+nunca se acepta. Las identidades desconocidas se aprovisionan mientras
+`allow_signup` se mantenga (predeterminado `true`); el **primer acceso
+por relé en una instancia vacía arranca en el grupo administrators** —
+exactamente igual que el primer registro en modo local.
+
+### Relé de emisores de confianza (`[[auth.trusted_issuers]]`)
+
+El equivalente del lado API (el patrón evernight-gateway): paneles
+cuyos **tokens kirino ACCESS** arona acepta directamente en toda
+superficie bearer (`/v1/*` donde se aceptan JWT, y el plano JSON-RPC).
+Cada fila nombra al emisor (`iss`, obligatorio), el secreto compartido
+de verificación y un `audience` opcional; la verificación es
+fail-closed por emisor — un token de otro emisor (o sin emisor) se
+rechaza, y un refresh token nunca es un bearer de sesión. El claim
+`username` del usuario del panel debe ser un correo (el plano de
+usuarios de arona se organiza por correo); se mapea a la cuenta LOCAL,
+y el aprovisionamiento de identidades desconocidas sigue el
+`allow_signup` de la fila.
+
+### Descubrimiento e informe de postura
+
+El método JSON-RPC sin autenticar `auth.methods` informa qué puertas
+existen (`password`, `oauth {begin_url, provider}`, `api_keys`,
+`trusted_issuers` — solo booleanos y nombres), y `system.status`
+lleva un bloque `auth` aditivo con los mismos hechos para operadores.
+
 ## Sesiones JWT
 
 Las sesiones usan pares de tokens JWT access/refresh emitidos por el gestor de

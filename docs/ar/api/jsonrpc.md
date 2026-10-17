@@ -84,9 +84,10 @@ description: "واجهة JSON-RPC 2.0 لمستوى إدارة arona في /api/rp
 
 | الطريقة | المصادقة | المعاملات | الوصف |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`, `password`, `name?` | سجّل حسابًا. مسموح به فقط بينما يكون التسجيل مفتوحًا (`ARONA_REGISTRATION_OPEN`)؛ يصبح أول مستخدم مسجَّل هو المدير. تعيد نفس استجابة token مثل `auth.login` (`access_token`، `refresh_token`، `token_type`، `expires_in`، `user`). |
-| `auth.login` | public | `email`, `password` | سجّل الدخول. تعيد `access_token`، `refresh_token`، `token_type`، `expires_in`، `user` (`{ id, email, name, is_admin }`). محدودة المعدل لكل عنوان IP وحساب. |
+| `auth.register` | public | `email`, `password`, `name?` | سجّل حسابًا. مسموح به فقط بينما يكون التسجيل مفتوحًا (`ARONA_REGISTRATION_OPEN`)؛ يصبح أول مستخدم مسجَّل هو المدير. تعيد نفس استجابة token مثل `auth.login` (`access_token`، `refresh_token`، `token_type`، `expires_in`، `user`).  في وضع `auth.mode = public` يُغلق هذا المسار ويعيد `AUTH_ERROR` (مصادقة كلمة المرور معطلة). |
+| `auth.login` | public | `email`, `password` | سجّل الدخول. تعيد `access_token`، `refresh_token`، `token_type`، `expires_in`، `user` (`{ id, email, name, is_admin }`). محدودة المعدل لكل عنوان IP وحساب.  في وضع `auth.mode = public` يُغلق هذا المسار ويعيد `AUTH_ERROR` (مصادقة كلمة المرور معطلة). |
 | `auth.refresh` | public | `refresh_token` | استبدل refresh token بـ access token جديد (وrefresh token جديد). تُرفض رموز التحديث المعاد استخدامها أو المنتهية بـ `AUTH_ERROR`. |
+| `auth.methods` | عام | — | أي أبواب المصادقة موجودة: `{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [أسماء] }`. قيم منطقية وأسماء فقط. |
 | `auth.me` | JWT | — | ملف المستخدم الحالي: `{ "id", "email", "name" }`. |
 
 ## المفاتيح

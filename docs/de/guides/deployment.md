@@ -77,6 +77,8 @@ das Dockerfile bauen.
 
 ## Konfiguration
 
+Die Konfiguration hat eine **feste TOML-Datei** als primären Träger (gefunden unter `./arona.toml` oder `/etc/arona/arona.toml`, oder mit `ARONA_CONFIG` festgelegt); Umgebungsvariablen wirken als Überschreibung pro Schlüssel — siehe die [Konfigurationsreferenz](./configuration.md) und `arona.toml.example`. Unten steht das Minimum für den reinen Env-Betrieb.
+
 Die gesamte Konfiguration erfolgt über Umgebungsvariablen; die
 [Konfigurationsreferenz](./configuration.md) dokumentiert jede Variable, und
 `.env.example` im Repository-Wurzelverzeichnis ist ein funktionierender

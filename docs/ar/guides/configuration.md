@@ -1,17 +1,62 @@
 ---
 title: "الإعدادات"
-description: "مرجع لكل متغير بيئة يقرؤه خادم أرونا، مع القيم الافتراضية والدلالات."
+description: "مرجع لملف تهيئة TOML الثابت ولكل متغير بيئة يقرأه خادم Arona، مع القيم الافتراضية والدلالات."
 ---
 
 # الإعدادات
+يقرأ Arona تهيئته من **ملف TOML ثابت**، وتعمل متغيرات البيئة كتجاوزات لكل مفتاح. يُحل كل مفتاح بترتيب: **متغير بيئة صريح ← قيمة TOML ← الافتراضي المدمج**؛ لذا تستمر عمليات النشر القائمة على env (وحدات systemd وdocker-compose و`.env.example`) دون تغيير، بينما يمكن للنشرات الجديدة تثبيت كل شيء في ملف واحد.
 
-يُضبط أرونا **بالكامل عبر متغيرات البيئة**، تُقرأ مرة واحدة عند إقلاع العملية
-(`Config::load` في `packages/core/src/config.rs`، بالإضافة إلى عدد قليل يُقرأ
-عند أول استخدام). لا يوجد ملف إعدادات: غيّر متغيرًا وأعد تشغيل الخادم
-ليُطبَّق.
+## ملف التهيئة
 
-هذه الصفحة هي المرجع لكل ما يقرؤه كود الخادم، مُجمَّعًا حسب الاهتمام. متغيرات
-خاصة بالـ mock ومتغيرات وقت التشغيل مُدرجة من أجل الاكتمال.
+يُكتشف الملف بهذا الترتيب — أول نتيجة تفوز:
+1. المسار في `ARONA_CONFIG` (يجب أن يوجد؛ الملف المفقود أو غير المقروء خطأ فادح عند الإقلاع)؛
+2. `./arona.toml` في دليل العمل؛
+3. `/etc/arona/arona.toml`؛
+4. لا شيء ← الوضع التقليدي بمتغيرات البيئة فقط.
+
+لا توجد **تراجع صامت**: الملف المكتشف الذي يفشل تحليله أو يحتوي مفتاحًا مجهولًا أو يحمل استيفاء `${VAR}` غير محلول يجهض الإقلاع بخطأ فادح. يتيح استيفاء `${VAR}` / `${VAR:-default}` بقاء الأسرار في البيئة أو في `LoadCredential` الخاص بـ systemd بينما يحتوي الملف على مراجع فقط. يُرفق قالب مشروح باسم `arona.toml.example` في جذر المستودع.
+يجب أن تكون المفاتيح المنطقية (`registration_open` و`writeback` و`backend_local` و`mistralrs_force` و`mock`) قيمًا منطقية بصيغة TOML داخل الملف؛ وتحافظ صيغ env الخاصة بها على دلالات سلسلة truthy أو الوجود الموثقة أدناه. يبقى المتغيران `ARONA_RUSTFS_ACCESS_KEY_FILE` / `ARONA_RUSTFS_SECRET_KEY_FILE` حكرًا على البيئة.
+
+يحمل قسم auth أيضًا كتلتين **مبنيتين ببنية** بلا شكل env: `[auth.oauth]` (مزوّد ترحيل OAuth2 — عناوين النقاط واعتمادات العميل والنطاقات وسياسة التسجيل) و`[[auth.trusted_issuers]]` (لوحات تُقبل رموزها من نوع kirino ACCESS مباشرة — المُصدِر والسر المشترك وaudience اختياريًا). تُتحقق كلتاهما عند الإقلاع وتوثَّقان في [المصادقة والأمان](./auth-security.md).
+
+| متغير البيئة | مفتاح TOML |
+| --- | --- |
+| `ARONA_HOST` | `server.host` |
+| `ARONA_PORT` | `server.port` |
+| `ARONA_DATA_DIR` | `server.data_dir` |
+| `DATABASE_URL` | `database.url` |
+| `ARONA_DB_MAX_CONNECTIONS` | `database.max_connections` |
+| `JWT_SECRET` | `auth.jwt_secret` |
+| `ARONA_ADMIN_TOKEN` | `auth.admin_token` |
+| `ARONA_AGENT_TOKEN` | `auth.agent_token` |
+| `ARONA_REGISTRATION_OPEN` | `auth.registration_open` |
+| `ARONA_API_RATE_LIMIT_RPM` | `auth.rate_limit_rpm` |
+| `ARONA_AUTH_MODE` | `auth.mode` |
+| `ARONA_CONFIG_KEY` | `catalog.config_key` |
+| `ARONA_MEMORY_URL` | `memory.url` |
+| `ARONA_MEMORY_TOKEN` | `memory.token` |
+| `ARONA_MEMORY_WRITEBACK` | `memory.writeback` |
+| `ARONA_MEMORY_SCOPE` | `memory.scope` |
+| `ARONA_MEDIA_URL_TTL_SECS` | `media.url_ttl_secs` |
+| `ARONA_MEDIA_BUCKET` | `media.bucket` |
+| `ARONA_MEDIA_BACKEND_LOCAL` | `media.backend_local` |
+| `ARONA_RUSTFS_ENDPOINT` | `storage.endpoint` |
+| `ARONA_RUSTFS_PUBLIC_ENDPOINT` | `storage.public_endpoint` |
+| `ARONA_RUSTFS_REGION` | `storage.region` |
+| `ARONA_RUSTFS_ACCESS_KEY` | `storage.access_key` |
+| `ARONA_RUSTFS_SECRET_KEY` | `storage.secret_key` |
+| `ARONA_EVERNIGHT_URL` | `bridge.evernight_url` |
+| `ARONA_AGENT_NAME` | `agent.name` |
+| `ARONA_PANEL_URL` | `agent.panel_url` |
+| `ARONA_AGENT_BIND_ADDR` | `agent.bind_addr` |
+| `ARONA_MISTRALRS` | `agent.mistralrs_force` |
+| `ARONA_POINTS_PER_USD` | `billing.points_per_usd` |
+| `MOCK_MODE` | `dev.mock` |
+| `MOCK_SEED_PATH` | `dev.seed_path` |
+| `HF_ENDPOINT` | `downloads.hf_endpoint` |
+| `GITHUB_TOKEN` | `downloads.github_token` |
+
+بقية هذه الصفحة هي **مرجع متغيرات البيئة**؛ وهي تصلح أيضًا مرجعًا لدلالات مفاتيح TOML المطابقة (الأسماء نفسها والقيم الافتراضية نفسها).
 
 ## جدول المرجع
 
@@ -68,7 +113,7 @@ set MOCK_MODE=1 only for local development.
 ### `ARONA_HOST` / `ARONA_PORT`
 
 عنوان الربط والمنفذ للـ gateway. للتوافق مع الإصدارات القديمة يتراجعان إلى
-`SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT`؛ الافتراضيات النهائية هي
+`SHITTIM_CHEST_HOST` / `SHITTIM_CHEST_PORT`؛ الافتراضيات النهائية هي (الترتيب: `server.host`/`server.port` من ملف التهيئة تتقدم على الأسماء البديلة القديمة — فقط `ARONA_HOST`/`ARONA_PORT` القياسية تتقدم على الملف)
 `0.0.0.0:8420`.
 
 ### `ARONA_DATA_DIR`
@@ -206,5 +251,5 @@ token الوصول الذي يستخدمه سجل نماذج GitHub (مصادر 
 | كتابة الذاكرة العكسية | مفعّلة |
 | التسجيل | مغلق |
 
-<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
+<!-- src: packages/core/src/config.rs (Config::load), packages/core/src/config/file.rs (discovery, interpolation, KEY_MAP), packages/core/src/gateway/run.rs:40-50 (startup checks), packages/core/src/auth.rs:30-38,160-214,694-705 (rate limit, mock seed), packages/core/src/gateway/server.rs:76-79 (data dir, admin token), packages/core/src/memory/mod.rs:79-98, packages/core/src/backends/bridge.rs:74-82, packages/core/src/pipeline.rs:136, packages/core/src/orchestration/llama_cpp.rs:434-451, packages/core/src/models/download.rs:30-40, packages/agent/src/main.rs:109 -->
 <!-- note: beyond the fact sheet, four more variables are read by the server code and were added to the table for completeness: ARONA_EVERNIGHT_URL (backends/bridge.rs:76, default ws://127.0.0.1:3001/ws), ARONA_MISTRALRS (pipeline.rs:136, presence semantics), ARONA_AGENT_BIND_ADDR (orchestration/llama_cpp.rs:437-438, default 127.0.0.1 — the bind of the spawned llama.cpp engine, distinct from the agent HTTP API which stays hardcoded to 0.0.0.0:5790, agent/src/main.rs:109), and HF_ENDPOINT (models/download.rs:30-40). -->

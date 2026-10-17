@@ -69,6 +69,8 @@ install -m 0755 target/release/_cli /usr/local/bin/arona-server
 
 ## الإعداد
 
+للتهيئة **ملف TOML ثابت** بوصفه الحامل الأساسي (يُكتشف في `./arona.toml` أو `/etc/arona/arona.toml`، أو يُحدد عبر `ARONA_CONFIG`)، وتعمل متغيرات البيئة كتجاوزات لكل مفتاح — راجع [مرجع التهيئة](./configuration.md) و`arona.toml.example`. في الأسفل الحد الأدنى عند الاعتماد على env وحده.
+
 كل الإعدادات تتم عبر متغيرات البيئة؛ يوثّق [مرجع
 الإعدادات](./configuration.md) كل متغير، و`.env.example` في جذر المستودع
 نقطة بداية عملية. الحد الأدنى المطلوب:

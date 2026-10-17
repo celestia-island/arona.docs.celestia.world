@@ -136,9 +136,10 @@ Token、部署进度和实时事件**不会**在 WebSocket socket 上投递。�
 
 | 方法 | 认证 | 参数 | 描述 |
 | --- | --- | --- | --- |
-| `auth.register` | public | `email`、`password`、`name?` | 注册账号。只在注册开放时允许（`ARONA_REGISTRATION_OPEN`）；第一个注册用户成为管理员。返回与 `auth.login` 相同的 token 响应（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）。 |
-| `auth.login` | public | `email`、`password` | 登录。返回 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, permissions }` (effective permission names)）。按 IP 和账号限流。 |
+| `auth.register` | public | `email`、`password`、`name?` | 注册账号。只在注册开放时允许（`ARONA_REGISTRATION_OPEN`）；第一个注册用户成为管理员。返回与 `auth.login` 相同的 token 响应（`access_token`、`refresh_token`、`token_type`、`expires_in`、`user`）。  在 `auth.mode = public` 下本方法整体关闭，返回 `AUTH_ERROR`（密码认证已禁用）。 |
+| `auth.login` | public | `email`、`password` | 登录。返回 `access_token`、`refresh_token`、`token_type`、`expires_in`、`user`（`{ id, email, name, permissions }` (effective permission names)）。按 IP 和账号限流。  在 `auth.mode = public` 下本方法整体关闭，返回 `AUTH_ERROR`（密码认证已禁用）。 |
 | `auth.refresh` | public | `refresh_token` | 用 refresh token 兑换新的 access token（和一个新的 refresh token）。重放或过期的 refresh token 以 `AUTH_ERROR` 拒绝。 |
+| `auth.methods` | 公开 | — | 查询存在哪些认证门：`{ password, oauth: { enabled, begin_url, provider } \| null, api_keys, trusted_issuers: [名字] }`。仅布尔与名字。 |
 | `auth.me` | JWT | — | 当前用户资料：`{ "id", "email", "name" }`。 |
 
 ## Keys
