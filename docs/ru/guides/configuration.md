@@ -69,6 +69,7 @@ Arona читает конфигурацию из **фиксированного 
 | `ARONA_PORT` | `8420` | Порт привязки (fallback на `SHITTIM_CHEST_PORT`). |
 | `ARONA_DATA_DIR` | не задана | Локальная директория данных. |
 | `ARONA_ADMIN_TOKEN` | не задан | Bearer-token для `/api/admin/*` и admin-методов RPC. |
+| `ARONA_AGENT_TOKEN` | откат к `ARONA_ADMIN_TOKEN` | Bearer-токен на стороне агента для `/ws/agent`; должен совпадать с операторским токеном панели. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy-значение (`1`/`true`/`yes`/`on`) открывает регистрацию. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | Лимит запросов в минуту на ключ в памяти; `0` блокирует всё. |
 | `MOCK_MODE` | не задан | Наличие (любое значение) включает dev mock mode. |

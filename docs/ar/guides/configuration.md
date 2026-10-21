@@ -68,6 +68,7 @@ description: "مرجع لملف تهيئة TOML الثابت ولكل متغير
 | `ARONA_PORT` | `8420` | منفذ الربط (يتراجع إلى `SHITTIM_CHEST_PORT`). |
 | `ARONA_DATA_DIR` | غير مضبوط | دليل البيانات المحلي. |
 | `ARONA_ADMIN_TOKEN` | غير مضبوط | token الحامل (bearer) لمسارات `/api/admin/*` وطرق RPC الإدارية. |
+| `ARONA_AGENT_TOKEN` | يرجع إلى `ARONA_ADMIN_TOKEN` | رمز Bearer من جهة الوكيل لـ `/ws/agent`؛ يجب أن يطابق رمز المشغّل في اللوحة. |
 | `ARONA_REGISTRATION_OPEN` | `0` | القيم الصادقة (`1`/`true`/`yes`/`on`) تفتح التسجيل. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | حد الطلبات في الذاكرة لكل مفتاح في الدقيقة؛ `0` يمنع كل شيء. |
 | `MOCK_MODE` | غير مضبوط | الحضور (أي قيمة) يفعّل وضع الـ mock للتطوير. |

@@ -146,7 +146,7 @@ Billing tier はキーごとの `rate_limit_rpm` を持ちます。チェック�
 以下は現状のまま文書化されています。意図的なものか、今のところ受け入れられているものですが、信頼されたネットワークの外にインスタンスを公開する場合は知っておく価値があります:
 
 - **`providers.list` は公開**ですが、`providers.add` / `providers.update` / `providers.remove` / `providers.test` は admin ゲートです（JWT + `users.is_admin`）。公開された読み取りパスはprovider カタログを明かしますが、秘密は何も含みません。
-- **`/ws/agent` は認証なしの制御プレーンです**: GPU agent はクレデンシャルなしで接続し、自己登録します（`register` / `heartbeat` / command-result フレーム）。WebSocket ポートに到達できる人は誰でも偽の agent を登録できます。運用上のトレードオフは[Agent クラスター](agent-cluster.md)を参照してください。
+- **`/ws/agent` はエージェントごとの ID ではなく共有オペレータートークンを使います**: パネルは `ARONA_ADMIN_TOKEN` と一致する `Authorization: Bearer <operator token>` を伴うアップグレードだけを許可し、パネル側トークンが未設定なら制御プレーンは閉じたままです。GPU agent は `ARONA_AGENT_TOKEN`（未設定時は `ARONA_ADMIN_TOKEN`）を送ります。認証情報は全 agent で共有されるため、盗まれたトークンによる agent なりすましは引き続き可能で、agent ごとの登録認証情報は今後の強化項目です。ネットワーク境界を越える配備では制御プレーンを TLS の背後に置いてください。
 - **`memory.delete` は所有権チェックなしの JWT のみです**: 認証済みのユーザーなら誰でも `node_id` でメモリノードを削除できます。メモリの削除にはログインが必要ですが、ノードの所有は不要です。
 
 <!-- src: packages/core/src/auth.rs:22-23,504-534,553-557,630-649,694-705 (tokens, keys, rate limit) / packages/core/src/gateway/server.rs:577-600 (admin gate) / packages/core/src/gateway/rpc.rs:39,90-118 (admin RPC gate) -->

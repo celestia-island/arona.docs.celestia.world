@@ -181,9 +181,7 @@ RPM**；pro/enterprise tier 提高上限。月度配额执行共用同一条拒�
   `providers.remove` / `providers.test` 受 admin 门控（JWT + administrators-group membership）。
   公开读路径会暴露 provider
   目录，但没有任何秘密。
-- **`/ws/agent` 是一个未认证的控制平面**：GPU agent 不带凭据连接并自行注册
-  （`register` / `heartbeat` / 命令结果帧）。任何能到达 WebSocket 端口的人
-  都能注册一个假 agent。运维权衡见 [Agent 集群](agent-cluster.md)。
+- **`/ws/agent` 使用共享的 operator token，而不是每个 agent 的独立身份**：只有携带与 `ARONA_ADMIN_TOKEN` 匹配的 `Authorization: Bearer <operator token>` 时，panel 才会接受控制平面升级；若 panel 未配置该 token，控制平面保持关闭。GPU agent 发送 `ARONA_AGENT_TOKEN`（未设置时回退到 `ARONA_ADMIN_TOKEN`）。由于凭据在所有 agent 间共享，令牌一旦泄漏仍可冒充 agent；每个 agent 的独立注册凭据属于后续加固项。任何跨越网络边界的部署都应把控制平面放在 TLS 之后。
 - **`memory.delete` 仅需 JWT 且无所有权检查**：任何已认证用户都能按
   `node_id` 删除记忆节点。删除记忆需要登录，但不需要拥有该节点。
 

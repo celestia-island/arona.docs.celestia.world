@@ -240,11 +240,7 @@ vertrauenswürdiges Netz hinaus exponieren:
   `providers.update` / `providers.remove` / `providers.test` sind admin-gesperrt
   (JWT + `users.is_admin`). Der öffentliche Lesepfad offenbart den Provider-Katalog, aber
   nichts Geheimes.
-- **`/ws/agent` ist eine nicht authentifizierte Control-Plane**: GPU-Agenten
-  verbinden sich ohne Credential und registrieren sich selbst (`register` /
-  `heartbeat` / Command-Result-Frames). Jeder, der den WebSocket-Port erreichen
-  kann, kann einen Fake-Agenten registrieren. Siehe
-  [Agent-Cluster](agent-cluster.md) für die operativen Abwägungen.
+- **`/ws/agent` verwendet ein gemeinsames Operator-Token, keine Identität pro Agent**: Die Panel-Steuerung akzeptiert das Upgrade nur mit `Authorization: Bearer <Operator-Token>`, das zu `ARONA_ADMIN_TOKEN` passt; ist dieses Panel-Token nicht gesetzt, bleibt die Steuerungsebene geschlossen. GPU-Agenten senden `ARONA_AGENT_TOKEN` (mit Rückfall auf `ARONA_ADMIN_TOKEN`). Da die Anmeldedaten von allen Agenten geteilt werden, kann ein gestohlenes Token weiterhin einen Agenten imitieren; eigene Enrollment-Credentials pro Agent bleiben zukünftige Härtung. Betreiben Sie die Steuerungsebene hinter TLS, wenn sie Netzgrenzen überschreitet.
 - **`memory.delete` ist JWT-only ohne Ownership-Prüfung**: Jeder
   authentifizierte Benutzer kann einen Memory-Knoten per `node_id` löschen.
   Das Löschen von Memory erfordert, eingeloggt zu sein, aber nicht, den Knoten

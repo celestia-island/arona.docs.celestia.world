@@ -233,11 +233,7 @@ confianza:
   `providers.update` / `providers.remove` / `providers.test` están protegidas por
   admin (JWT + `users.is_admin`).
   La ruta de lectura pública revela el catálogo de providers pero nada secreto.
-- **`/ws/agent` es un plano de control sin autenticar**: los agentes GPU se
-  conectan sin credencial y se auto-registran (frames de `register` / `heartbeat`
-  / resultado de comando). Cualquiera que pueda alcanzar el puerto WebSocket
-  puede registrar un agente falso. Consulte [Clúster de agentes](agent-cluster.md)
-  para las compensaciones operativas.
+- **`/ws/agent` usa un token de operador compartido, no una identidad por agente**: el panel rechaza la actualización salvo que la solicitud lleve `Authorization: Bearer <operator token>` y coincida con `ARONA_ADMIN_TOKEN`; si ese token del panel no está configurado, el plano de control permanece cerrado. Los agentes GPU envían `ARONA_AGENT_TOKEN` (con fallback a `ARONA_ADMIN_TOKEN`). Como la credencial es compartida entre agentes, un token robado todavía puede suplantar a un agente; las credenciales de enrollment por agente quedan como endurecimiento futuro. Mantenga el plano de control detrás de TLS en cualquier despliegue que cruce una frontera de red.
 - **`memory.delete` es solo-JWT sin comprobación de propiedad**: cualquier
   usuario autenticado puede eliminar un nodo de memoria por `node_id`. Eliminar
   memoria requiere haber iniciado sesión, pero no ser dueño del nodo.

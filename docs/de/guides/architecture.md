@@ -238,9 +238,7 @@ die Produktion verwenden:
   Anfragen pro Key pro Fenster; der Limiter der Abrechnungs-Tier ist
   DB-gestützt (siehe [Auth & Sicherheit](auth-security.md) und
   [Abrechnung & Nutzung](billing-usage.md)).
-- **`/ws/agent` ist nicht authentifiziert** — die Agent-Steuerungsebene
-  akzeptiert jede WebSocket, die das Register-/Heartbeat-Protokoll spricht.
-  Sie ist nur in einem Netzwerk sicher, das Sie kontrollieren.
+- **`/ws/agent` erfordert das Operator-Token** — die Agent-Steuerungsebene akzeptiert nur Upgrades mit `Authorization: Bearer <Operator-Token>`, das zu `ARONA_ADMIN_TOKEN` passt; ein nicht gesetztes Panel-Token schlägt fail-closed fehl. Das aktuelle Credential gilt gemeinsam für alle Agenten statt als Identität pro Agent; siehe [Agent-Cluster](agent-cluster.md).
 - **Kein TLS am Gateway** — der Server bindet an klarem HTTP; terminieren Sie
   TLS davor (Reverse Proxy) in jeder Bereitstellung, die eine Netzwerkgrenze
   überschreitet. Siehe [Bereitstellung](deployment.md).

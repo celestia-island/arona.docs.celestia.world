@@ -100,7 +100,7 @@ memory 클라이언트(`packages/core/src/memory/mod.rs`)는 서버 시작 시 �
 - **SSE 스트림에 전체 타임아웃 없음** — 스트리밍 호출에는 총 데드라인이 없습니다(긴 생성은 합법). 중단 감지는 읽기당 120초 유휴 타임아웃(`backends/external.rs:24-31`)에 의존합니다. 비스트리밍 호출은 600초 전체 데드라인을 받습니다.
 - **토크나이저 추정 사용량** — 사용량을 절대 보고하지 않는 backend(ollama, ws_engine)는 로컬 CJK 인식 토크나이저 추정으로 청구되며, 그대로 기록됩니다([billing-usage](billing-usage.md) 참조).
 - **인메모리 rate-limit 윈도우 및 폐기** — 키별 슬라이딩 윈도우와 폐기된 키 집합이 프로세스 메모리에 있습니다(`auth.rs`). 따라서 재시작 시 재설정됩니다. auth 수준 리미터는 윈도우당 키당 요청을 제한하고, billing-tier 리미터는 DB 기반입니다([auth-security](auth-security.md) 및 [billing-usage](billing-usage.md) 참조).
-- **`/ws/agent`는 인증되지 않음** — agent 제어 평면은 register/heartbeat 프로토콜을 말하는 모든 WebSocket을 받아들입니다. 통제하는 네트워크에서만 안전합니다.
+- **`/ws/agent`는 오퍼레이터 토큰을 요구합니다** — agent 제어 평면은 `ARONA_ADMIN_TOKEN`과 일치하는 `Authorization: Bearer <operator token>`이 있는 요청만 업그레이드합니다. 패널 토큰이 설정되지 않으면 fail-closed로 거부합니다. 현재 자격 증명은 agent별 ID가 아니라 모든 agent가 공유합니다. 자세한 내용은 [Agent Cluster](agent-cluster.md)를 참조하세요.
 - **gateway에 TLS 없음** — 서버는 일반 HTTP에 바인딩합니다. 네트워크 경계를 넘는 모든 배포에서는 앞에서 TLS를 종료(리버스 프록시)하세요. [deployment](deployment.md) 참조.
 
 정상 측면에서 서버는 graceful shutdown을 수행합니다: Ctrl+C 및 SIGTERM 핸들러를 설치하고, "draining connections"을 로그하며, 프로세스가 종료되기 전에 진행 중인 요청이 끝나게 합니다(`gateway/run.rs:14-38`, run.rs:154-159의 `with_graceful_shutdown` 배선).

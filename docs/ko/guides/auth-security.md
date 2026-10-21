@@ -144,7 +144,7 @@ Billing tiers는 키별 `rate_limit_rpm`을 가집니다. 검사는 **지난 60�
 다음은 있는 그대로 문서화됩니다. 의도적이거나 현재 수용된 것이지만, 신뢰할 수 있는 네트워크 너머로 인스턴스를 노출할 때 알아 둘 가치가 있습니다:
 
 - **`providers.list`는 공개**인 반면, `providers.add` / `providers.update` / `providers.remove` / `providers.test`는 admin 게이트입니다(JWT + `users.is_admin`). 공개 읽기 경로는 provider 카탈로그를 드러내지만 비밀은 아닙니다.
-- **`/ws/agent`는 인증되지 않은 제어 평면입니다**: GPU agents가 자격 증명 없이 연결하여 자체 등록합니다(`register` / `heartbeat` / command-result 프레임). WebSocket 포트에 도달할 수 있는 사람은 누구나 가짜 agent를 등록할 수 있습니다. 운영상의 트레이드오프는 [Agent Cluster](agent-cluster.md)를 참조하세요.
+- **`/ws/agent`는 agent별 ID가 아니라 공유 오퍼레이터 토큰을 사용합니다**: 패널은 `ARONA_ADMIN_TOKEN`과 일치하는 `Authorization: Bearer <operator token>`이 있는 업그레이드만 허용하며, 패널 토큰이 설정되지 않으면 제어 평면은 닫힌 상태로 유지됩니다. GPU agent는 `ARONA_AGENT_TOKEN`(없으면 `ARONA_ADMIN_TOKEN`)을 전송합니다. 자격 증명이 모든 agent에 공유되므로 탈취된 토큰으로 agent를 가장할 수 있으며, agent별 등록 자격 증명은 향후 강화 항목입니다. 네트워크 경계를 넘는 배포에서는 제어 평면을 TLS 뒤에 두십시오.
 - **`memory.delete`는 소유권 검사가 없는 JWT 전용입니다**: 인증된 사용자라면 누구나 `node_id`로 memory 노드를 삭제할 수 있습니다. Memory를 삭제하려면 로그인이 필요하지만 노드를 소유할 필요는 없습니다.
 
 <!-- src: packages/core/src/auth.rs:22-23,504-534,553-557,630-649,694-705 (tokens, keys, rate limit) / packages/core/src/gateway/server.rs:577-600 (admin gate) / packages/core/src/gateway/rpc.rs:39,90-118 (admin RPC gate) -->

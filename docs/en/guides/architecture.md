@@ -216,9 +216,11 @@ production use:
   restart resets them. The auth-level limiter bounds requests per key per
   window; the billing-tier limiter is DB-backed (see
   [auth-security](auth-security.md) and [billing-usage](billing-usage.md)).
-- **`/ws/agent` is unauthenticated** — the agent control plane accepts any
-  WebSocket that speaks the register/heartbeat protocol. It is safe only on a
-  network you control.
+- **`/ws/agent` requires the operator token** — the agent control plane only
+  upgrades requests carrying `Authorization: Bearer <operator token>` that
+  matches `ARONA_ADMIN_TOKEN`; an unset panel token fails closed. The current
+  credential is shared by every agent rather than a per-agent identity; see
+  [Agent Cluster](agent-cluster.md).
 - **No TLS at the gateway** — the server binds plain HTTP; terminate TLS in
   front (reverse proxy) in any deployment that crosses a network boundary.
   See [deployment](deployment.md).

@@ -76,6 +76,7 @@ variables (`packages/core/src/config.rs:37-40`):
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | Unique node id; the panel uses it as the `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | Panel `host:port`; the agent connects to `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | falls back to `ARONA_ADMIN_TOKEN` | Bearer token sent by the agent on the `/ws/agent` upgrade; must match the panel's operator token. |
 
 See [Configuration](./configuration.md) for the full environment-variable
 reference (panel-side variables, database, secrets).
@@ -84,6 +85,7 @@ reference (panel-side variables, database, secrets).
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

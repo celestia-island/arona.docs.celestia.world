@@ -181,8 +181,7 @@ rpc.rs:128-144），因此客户端可以把 RPC 响应复用到一条已打开�
   内存（`auth.rs`），因此重启会重置它们。认证级限流器按每 key 每窗口限制
   请求；计费 tier 限流器由数据库支撑（见 [auth-security](auth-security.md)
   和 [billing-usage](billing-usage.md)）。
-- **`/ws/agent` 未认证** —— agent 控制平面接受任意说 register/heartbeat
-  协议的 WebSocket。只有在你控制的网络上才是安全的。
+- **`/ws/agent` 需要 operator token** —— agent 控制平面只接受携带与 `ARONA_ADMIN_TOKEN` 匹配的 `Authorization: Bearer <operator token>` 的升级请求；panel 未配置该 token 时按 fail-closed 拒绝。当前凭据由所有 agent 共享，而不是每个 agent 的独立身份；见 [Agent 集群](agent-cluster.md)。
 - **gateway 无 TLS** —— 服务器绑定纯 HTTP；任何跨越网络边界的部署都应在前面
   终结 TLS（反向代理）。见 [deployment](deployment.md)。
 

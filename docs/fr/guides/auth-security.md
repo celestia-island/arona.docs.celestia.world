@@ -242,11 +242,7 @@ au-delà d'un réseau de confiance :
   (JWT + `users.is_admin`).
   Le chemin de lecture public révèle le catalogue de providers mais rien de
   secret.
-- **`/ws/agent` est un plan de contrôle non authentifié** : les agents GPU se
-  connectent sans identifiant et s'auto-enregistrent (frames `register` /
-  `heartbeat` / résultats de commandes). Quiconque peut atteindre le port
-  WebSocket peut enregistrer un faux agent. Voir
-  [Cluster d'agents](agent-cluster.md) pour les compromis opérationnels.
+- **`/ws/agent` utilise un jeton opérateur partagé, pas une identité par agent** : le panneau refuse la mise à niveau si la requête ne porte pas `Authorization: Bearer <operator token>` correspondant à `ARONA_ADMIN_TOKEN` ; si ce jeton du panneau n'est pas défini, le plan de contrôle reste fermé. Les agents GPU envoient `ARONA_AGENT_TOKEN` (avec repli sur `ARONA_ADMIN_TOKEN`). Le justificatif étant partagé entre agents, un jeton volé peut encore usurper un agent ; des identifiants d'enrôlement par agent restent un durcissement futur. Placez le plan de contrôle derrière TLS dès qu'il franchit une frontière réseau.
 - **`memory.delete` est réservé au JWT sans contrôle de propriété** : tout
   utilisateur authentifié peut supprimer un nœud mémoire par `node_id`.
   Supprimer de la mémoire requiert d'être connecté, mais pas de posséder le

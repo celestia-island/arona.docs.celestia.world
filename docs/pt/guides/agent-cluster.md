@@ -78,6 +78,7 @@ ambiente (`packages/core/src/config.rs:37-40`):
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | Id único do nó; o panel o usa como `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | `host:port` do panel; o agent se conecta a `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | recorre a `ARONA_ADMIN_TOKEN` | Token Bearer enviado pelo agent na atualização de `/ws/agent`; deve corresponder ao token de operador do painel. |
 
 Veja [Configuração](./configuration.md) para a referência completa de variáveis
 de ambiente (variáveis do lado do panel, banco de dados, segredos).
@@ -86,6 +87,7 @@ de ambiente (variáveis do lado do panel, banco de dados, segredos).
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

@@ -49,6 +49,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | 고유 노드 id. 패널이 이를 `agent_id`로 사용합니다. |
 | `ARONA_PANEL_URL` | `localhost:8080` | 패널 `host:port`. Agent는 `ws://{ARONA_PANEL_URL}/ws/agent`에 연결합니다. |
+| `ARONA_AGENT_TOKEN` | `ARONA_ADMIN_TOKEN`으로 폴백 | agent가 `/ws/agent` 업그레이드 시 보내는 Bearer 토큰이며, 패널의 오퍼레이터 토큰과 일치해야 합니다. |
 
 전체 환경 변수 참조(패널 측 변수, 데이터베이스, 시크릿)는 [구성](./configuration.md)을 참조하세요.
 
@@ -56,6 +57,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

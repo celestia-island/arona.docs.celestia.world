@@ -69,6 +69,7 @@ O restante desta página é a **referência de variáveis de ambiente**; também
 | `ARONA_PORT` | `8420` | Porta de bind (cai para `SHITTIM_CHEST_PORT`). |
 | `ARONA_DATA_DIR` | não definida | Diretório local de dados. |
 | `ARONA_ADMIN_TOKEN` | não definida | Bearer token para `/api/admin/*` e os métodos RPC de admin. |
+| `ARONA_AGENT_TOKEN` | recorre a `ARONA_ADMIN_TOKEN` | Token Bearer do lado do agent para `/ws/agent`; deve corresponder ao token de operador do painel. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy (`1`/`true`/`yes`/`on`) abre o cadastro. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | Limite em memória por chave de requisições por minuto; `0` bloqueia tudo. |
 | `MOCK_MODE` | não definida | Presença (qualquer valor) habilita o modo mock de dev. |

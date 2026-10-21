@@ -69,6 +69,7 @@ Der Rest dieser Seite ist die **Umgebungsvariablen-Referenz**; sie dient zugleic
 | `ARONA_PORT` | `8420` | Bind-Port (fällt auf `SHITTIM_CHEST_PORT` zurück). |
 | `ARONA_DATA_DIR` | unset | Lokales Datenverzeichnis. |
 | `ARONA_ADMIN_TOKEN` | unset | Bearer-Token für `/api/admin/*` und die Admin-RPC-Methoden. |
+| `ARONA_AGENT_TOKEN` | fällt auf `ARONA_ADMIN_TOKEN` zurück | Agent-seitiges Bearer-Token für `/ws/agent`; muss dem Operator-Token des Panels entsprechen. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy (`1`/`true`/`yes`/`on`) öffnet die Registrierung. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | In-Memory-Anfragelimit pro Key und Minute; `0` blockiert alles. |
 | `MOCK_MODE` | unset | Vorhandensein (beliebiger Wert) aktiviert den Dev-Mock-Modus. |

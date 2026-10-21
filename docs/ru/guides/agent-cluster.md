@@ -80,6 +80,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | Уникальный id узла; панель использует его как `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | `host:port` панели; агент подключается к `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | откат к `ARONA_ADMIN_TOKEN` | Bearer-токен, который агент отправляет при upgrade `/ws/agent`; должен совпадать с операторским токеном панели. |
 
 Полный справочник переменных окружения (переменные панели, база данных,
 секреты) см. в [Конфигурация](./configuration.md).
@@ -88,6 +89,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

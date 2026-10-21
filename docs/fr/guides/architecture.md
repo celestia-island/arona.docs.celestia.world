@@ -237,9 +237,7 @@ avant l'utilisation en production :
   niveau auth borne les requêtes par key par fenêtre ; le limiteur de tier est
   adossé à la base de données (voir [auth-sécurité](auth-security.md) et
   [facturation-usage](billing-usage.md)).
-- **`/ws/agent` est non authentifié** — le plan de contrôle d'agents accepte
-  tout WebSocket qui parle le protocole register/heartbeat. Il n'est sûr que
-  sur un réseau que vous contrôlez.
+- **`/ws/agent` exige le jeton opérateur** — le plan de contrôle d'agents n'accepte que les requêtes portant `Authorization: Bearer <operator token>` correspondant à `ARONA_ADMIN_TOKEN` ; si le jeton du panneau n'est pas défini, l'échec est fermé. Le justificatif actuel est partagé par tous les agents plutôt qu'une identité par agent ; voir [Cluster d'agents](agent-cluster.md).
 - **Pas de TLS au gateway** — le serveur écoute en HTTP simple ; terminez le
   TLS devant (reverse proxy) dans tout déploiement qui traverse une frontière
   réseau. Voir [déploiement](deployment.md).

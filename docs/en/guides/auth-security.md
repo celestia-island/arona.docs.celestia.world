@@ -227,11 +227,14 @@ but worth knowing when you expose an instance beyond a trusted network:
   `providers.remove` / `providers.test` require the `provider.delete` / `provider.use` RBAC permissions.
   The public read path
   reveals the provider catalog but nothing secret.
-- **`/ws/agent` is an unauthenticated control plane**: GPU agents connect
-  with no credential and self-register (`register` / `heartbeat` /
-  command-result frames). Anyone who can reach the WebSocket port can
-  register a fake agent. See [Agent Cluster](agent-cluster.md) for the
-  operational trade-offs.
+- **`/ws/agent` uses a shared operator token, not per-agent identity**: the
+  panel rejects the upgrade unless the request carries
+  `Authorization: Bearer <operator token>` matching `ARONA_ADMIN_TOKEN`;
+  when that panel token is unset, the control plane stays closed. GPU agents
+  send `ARONA_AGENT_TOKEN` (falling back to `ARONA_ADMIN_TOKEN`). Because the
+  credential is shared across agents, a stolen token can still impersonate an
+  agent; per-agent enrollment credentials remain future hardening. Keep the
+  control plane behind TLS in any deployment that crosses a network boundary.
 - **`memory.delete` is JWT-only with no ownership check**: any authenticated
   user can delete a memory node by `node_id`. Deleting memory requires being
   logged in, but not owning the node.

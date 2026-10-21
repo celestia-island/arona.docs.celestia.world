@@ -48,6 +48,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | 一意のノード id。パネルはこれを `agent_id` として使用します。 |
 | `ARONA_PANEL_URL` | `localhost:8080` | パネルの `host:port`。agent は `ws://{ARONA_PANEL_URL}/ws/agent` に接続します。 |
+| `ARONA_AGENT_TOKEN` | `ARONA_ADMIN_TOKEN` にフォールバック | agent が `/ws/agent` のアップグレード時に送る Bearer トークン。パネルのオペレータートークンと一致する必要があります。 |
 
 完全な環境変数リファレンス（パネル側の変数、データベース、シークレット）は[設定](./configuration.md)を参照してください。
 
@@ -55,6 +56,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

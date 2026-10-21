@@ -79,6 +79,7 @@ variables d'environnement (`packages/core/src/config.rs:37-40`) :
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | Id de nœud unique ; le panel l'utilise comme `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | `host:port` du panel ; l'agent se connecte à `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | repli sur `ARONA_ADMIN_TOKEN` | Jeton Bearer envoyé par l'agent lors de la mise à niveau `/ws/agent` ; doit correspondre au jeton opérateur du panneau. |
 
 Voir [Configuration](./configuration.md) pour la référence complète des
 variables d'environnement (variables côté panel, base de données, secrets).
@@ -87,6 +88,7 @@ variables d'environnement (variables côté panel, base de données, secrets).
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

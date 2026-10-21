@@ -69,6 +69,7 @@ auth 섹션은 env 형태가 없는 **구조화된** 두 블록을 추가로 담
 | `ARONA_PORT` | `8420` | 바인딩 포트(`SHITTIM_CHEST_PORT`로 대체됨). |
 | `ARONA_DATA_DIR` | 설정 안 됨 | 로컬 데이터 디렉터리. |
 | `ARONA_ADMIN_TOKEN` | 설정 안 됨 | `/api/admin/*` 및 admin RPC 메서드용 bearer token. |
+| `ARONA_AGENT_TOKEN` | `ARONA_ADMIN_TOKEN`으로 폴백 | agent 측이 `/ws/agent`에 보내는 Bearer 토큰이며, 패널의 오퍼레이터 토큰과 일치해야 합니다. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy 값(`1`/`true`/`yes`/`on`)이 가입을 엽니다. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | 키별 분당 인메모리 요청 제한. `0`이면 모든 요청을 차단합니다. |
 | `MOCK_MODE` | 설정 안 됨 | 존재(어떤 값이든)하면 개발용 mock 모드를 활성화합니다. |

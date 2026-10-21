@@ -194,8 +194,7 @@ session 通道也用於請求／回應 RPC 呼叫：當客戶端在 `POST /api/r
   存在程序記憶體（`auth.rs`），因此重啟會重置它們。auth 層限制器限制
   每個視窗每個 key 的請求數；billing tier 限制器以資料庫為後盾
   （見[auth-security](auth-security.md)與[billing-usage](billing-usage.md)）。
-- **`/ws/agent` 不需認證** — agent 控制平面接受任何使用
-  register/heartbeat 協定的 WebSocket。它只在你能控制的網路上才安全。
+- **`/ws/agent` 需要 operator token** —— agent 控制平面只接受攜帶與 `ARONA_ADMIN_TOKEN` 相符的 `Authorization: Bearer <operator token>` 的升級請求；panel 未設定該 token 時以 fail-closed 拒絕。目前憑證由所有 agent 共享，而不是每個 agent 的獨立身分；見 [Agent 叢集](agent-cluster.md)。
 - **gateway 沒有 TLS** — 伺服器綁定純 HTTP；任何跨越網路邊界的部署都要
   在前面終止 TLS（反向 proxy）。見[deployment](deployment.md)。
 

@@ -100,7 +100,7 @@ backend が呼び出される前に、`RequestPipeline::transform`（`packages/c
 - **SSE ストリームに全体のタイムアウトなし** — ストリーミング呼び出しは合計デッドラインを持ちません（長い生成は合法）。ハング検出は読み取りごとの 120 秒のアイドルタイムアウトに依存します（`backends/external.rs:24-31`）。非ストリーミング呼び出しは 600 秒の全体デッドラインを得ます。
 - **トークナイザー推定の usage** — usage を報告しない backend（ollama、ws_engine）は、ローカルの CJK 対応トークナイザー推定で請求され、そのまま記録されます（[billing-usage](billing-usage.md)を参照）。
 - **インメモリのレート制限ウィンドウと失効** — キーごとのスライディングウィンドウと失効キーセットはプロセスメモリにあります（`auth.rs`）。したがって再起動でリセットされます。認証レベルのリミッターはウィンドウごとのキーあたりのリクエストを制限し、billing tier のリミッターは DB バックです（[auth-security](auth-security.md)と[billing-usage](billing-usage.md)を参照）。
-- **`/ws/agent` は認証なし** — agent 制御プレーンは register / heartbeat プロトコルを話す任意の WebSocket を受け入れます。自分が制御するネットワーク上でのみ安全です。
+- **`/ws/agent` はオペレータートークンを要求します** — agent 制御プレーンは `ARONA_ADMIN_TOKEN` と一致する `Authorization: Bearer <operator token>` を伴うリクエストだけをアップグレードします。パネル側トークンが未設定なら fail-closed で拒否します。現在の認証情報は agent ごとの ID ではなく全 agent で共有されています。詳細は [Agent クラスター](agent-cluster.md) を参照してください。
 - **gateway に TLS なし** — サーバーは平文 HTTP にバインドします。ネットワーク境界を越えるデプロイでは、前面（リバースプロキシ）で TLS を終端してください。[deployment](deployment.md)を参照してください。
 
 優雅な面では、サーバーはグレースフルシャットダウンを実行します: Ctrl+C と SIGTERM ハンドラーをインストールし、「draining connections」をログし、プロセスが終了する前に進行中のリクエストを完了させます（`gateway/run.rs:14-38`、および run.rs:154-159 の `with_graceful_shutdown` 配線）。

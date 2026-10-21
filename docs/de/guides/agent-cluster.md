@@ -80,6 +80,7 @@ konfiguriert (`packages/core/src/config.rs:37-40`):
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | Eindeutige Knoten-ID; das Panel verwendet sie als `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | Panel-`host:port`; der Agent verbindet sich mit `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | fällt auf `ARONA_ADMIN_TOKEN` zurück | Bearer-Token, das der Agent beim Upgrade von `/ws/agent` sendet; muss dem Operator-Token des Panels entsprechen. |
 
 Siehe [Konfiguration](./configuration.md) für die vollständige
 Umgebungsvariablen-Referenz (Panel-seitige Variablen, Datenbank, Secrets).
@@ -88,6 +89,7 @@ Umgebungsvariablen-Referenz (Panel-seitige Variablen, Datenbank, Secrets).
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

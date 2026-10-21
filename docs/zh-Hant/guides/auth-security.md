@@ -188,10 +188,7 @@ Billing tiers 攜帶 per-key 的 `rate_limit_rpm`。檢查會計算該 key 前�
   `providers.remove`／`providers.test` 受 admin 閘控（JWT + `users.is_admin`）。
   公開讀取路徑會揭露
   provider 目錄，但沒有機密內容。
-- **`/ws/agent` 是不需認證的控制平面**：GPU agents 不用任何憑證連線並
-  自行註冊（`register`／`heartbeat`／command-result frames）。任何能連到
-  WebSocket 連接埠的人都可以註冊假 agent。營運上的取捨見
-  [Agent 叢集](agent-cluster.md)。
+- **`/ws/agent` 使用共享的 operator token，而不是每個 agent 的獨立身分**：只有攜帶與 `ARONA_ADMIN_TOKEN` 相符的 `Authorization: Bearer <operator token>` 時，panel 才會接受控制平面升級；若 panel 未設定該 token，控制平面保持關閉。GPU agent 會送出 `ARONA_AGENT_TOKEN`（未設定時回退到 `ARONA_ADMIN_TOKEN`）。由於憑證在所有 agent 間共享，令牌一旦外洩仍可冒充 agent；每個 agent 的獨立註冊憑證屬於後續強化項。任何跨越網路邊界的部署都應把控制平面放在 TLS 之後。
 - **`memory.delete` 僅需 JWT、無所有權檢查**：任何已認證的使用者都可以
   依 `node_id` 刪除記憶節點。刪除記憶需要登入，但不需要擁有該節點。
 

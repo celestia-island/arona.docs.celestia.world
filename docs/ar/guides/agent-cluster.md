@@ -48,6 +48,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | معرّف عقدة فريد؛ تستخدمه اللوحة كـ `agent_id`. |
 | `ARONA_PANEL_URL` | `localhost:8080` | `host:port` الخاص باللوحة؛ يتصل الـ agent بـ `ws://{ARONA_PANEL_URL}/ws/agent`. |
+| `ARONA_AGENT_TOKEN` | يرجع إلى `ARONA_ADMIN_TOKEN` | رمز Bearer يرسله الوكيل عند ترقية `/ws/agent`؛ يجب أن يطابق رمز المشغّل في اللوحة. |
 
 انظر [الإعدادات](./configuration.md) للمرجع الكامل لمتغيرات البيئة (متغيرات جانب اللوحة، قاعدة البيانات، الأسرار).
 
@@ -55,6 +56,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 

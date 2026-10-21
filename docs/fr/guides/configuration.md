@@ -69,6 +69,7 @@ Le reste de cette page est la **référence des variables d'environnement** ; el
 | `ARONA_PORT` | `8420` | Port d'écoute (repli sur `SHITTIM_CHEST_PORT`). |
 | `ARONA_DATA_DIR` | non défini | Répertoire de données local. |
 | `ARONA_ADMIN_TOKEN` | non défini | Bearer token pour `/api/admin/*` et les méthodes RPC admin. |
+| `ARONA_AGENT_TOKEN` | repli sur `ARONA_ADMIN_TOKEN` | Jeton Bearer côté agent pour `/ws/agent` ; doit correspondre au jeton opérateur du panneau. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Une valeur truthy (`1`/`true`/`yes`/`on`) ouvre l'inscription. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | Limite de requêtes en mémoire par key et par minute ; `0` bloque tout. |
 | `MOCK_MODE` | non défini | La présence (n'importe quelle valeur) active le mode mock de dev. |

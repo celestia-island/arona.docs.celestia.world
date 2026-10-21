@@ -69,6 +69,7 @@ auth 节还承载两个**结构化**子块（无 env 形态）：`[auth.oauth]`�
 | `ARONA_PORT` | `8420` | 绑定端口（回退到 `SHITTIM_CHEST_PORT`）。 |
 | `ARONA_DATA_DIR` | 未设置 | 本地数据目录。 |
 | `ARONA_ADMIN_TOKEN` | 未设置 | `/api/admin/*` 与 admin RPC 方法的 Bearer token。 |
+| `ARONA_AGENT_TOKEN` | 回退到 `ARONA_ADMIN_TOKEN` | agent 侧用于 `/ws/agent` 的 Bearer token；必须与 panel 的 operator token 相同。 |
 | `ARONA_REGISTRATION_OPEN` | `0` | truthy（`1`/`true`/`yes`/`on`）时开放注册。 |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | 每 key 每分钟的内存限流；`0` 会阻断所有请求。 |
 | `MOCK_MODE` | 未设置 | 只要存在（任意值）即启用开发 mock 模式。 |

@@ -225,9 +225,7 @@ produção:
   requisições por chave por janela; o limitador de tier de billing é apoiado em
   DB (veja [auth e segurança](auth-security.md) e
   [billing e uso](billing-usage.md)).
-- **`/ws/agent` é não autenticado** — o plano de controle de agents aceita
-  qualquer WebSocket que fale o protocolo register/heartbeat. Ele só é seguro em
-  uma rede que você controla.
+- **`/ws/agent` exige o token de operador** — o plano de controle de agents só atualiza requisições que trazem `Authorization: Bearer <operator token>` correspondente a `ARONA_ADMIN_TOKEN`; se o token do painel não estiver definido, falha fechado. A credencial atual é compartilhada por todos os agents em vez de uma identidade por agent; veja [Cluster de agents](agent-cluster.md).
 - **Sem TLS no gateway** — o servidor faz bind em HTTP puro; termine o TLS à
   frente (reverse proxy) em qualquer implantação que cruze uma fronteira de
   rede. Veja [implantação](deployment.md).

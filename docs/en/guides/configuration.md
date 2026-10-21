@@ -69,6 +69,7 @@ The rest of this page is the **environment-variable reference**; it doubles as t
 | `ARONA_PORT` | `8420` | Bind port (falls back to `SHITTIM_CHEST_PORT`). |
 | `ARONA_DATA_DIR` | unset | Local data directory. |
 | `ARONA_ADMIN_TOKEN` | unset | Bearer token for `/api/admin/*` and the admin RPC methods. |
+| `ARONA_AGENT_TOKEN` | falls back to `ARONA_ADMIN_TOKEN` | Agent-side bearer token for `/ws/agent`; must match the panel's operator token. |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy (`1`/`true`/`yes`/`on`) opens sign-up. |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | Per-key in-memory request limit per minute; `0` blocks everything. |
 | `MOCK_MODE` | unset | Presence (any value) enables dev mock mode. |

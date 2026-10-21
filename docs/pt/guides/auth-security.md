@@ -224,11 +224,7 @@ enquanto, mas vale saber ao expor uma instância além de uma rede confiável:
 - **`providers.list` é público**, enquanto `providers.add` / `providers.update` /
   `providers.remove` / `providers.test` têm gate de admin (JWT + `users.is_admin`). O caminho de leitura
   público revela o catálogo de providers, mas nada secreto.
-- **`/ws/agent` é um plano de controle não autenticado**: agents de GPU se
-  conectam sem credencial e se auto-registram (frames `register` / `heartbeat` /
-  command-result). Qualquer um que alcance a porta WebSocket pode registrar um
-  agent falso. Veja [Cluster de agents](agent-cluster.md) para os tradeoffs
-  operacionais.
+- **`/ws/agent` usa um token de operador compartilhado, não uma identidade por agent**: o painel rejeita a atualização a menos que a requisição traga `Authorization: Bearer <operator token>` correspondente a `ARONA_ADMIN_TOKEN`; se esse token do painel não estiver definido, o plano de controle permanece fechado. Agents de GPU enviam `ARONA_AGENT_TOKEN` (com fallback para `ARONA_ADMIN_TOKEN`). Como a credencial é compartilhada entre agents, um token roubado ainda pode personificar um agent; credenciais de enrollment por agent continuam como endurecimento futuro. Mantenha o plano de controle atrás de TLS em qualquer implantação que cruze uma fronteira de rede.
 - **`memory.delete` é apenas-JWT sem verificação de ownership**: qualquer
   usuário autenticado pode deletar um nó de memória por `node_id`. Deletar
   memória exige estar logado, mas não ser dono do nó.

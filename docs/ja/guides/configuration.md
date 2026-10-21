@@ -69,6 +69,7 @@ auth セクションはさらに、env 形式を持たない **構造化され�
 | `ARONA_PORT` | `8420` | バインドポート（`SHITTIM_CHEST_PORT` にフォールバック）。 |
 | `ARONA_DATA_DIR` | 未設定 | ローカルデータディレクトリ。 |
 | `ARONA_ADMIN_TOKEN` | 未設定 | `/api/admin/*` と admin RPC メソッド用の Bearer token。 |
+| `ARONA_AGENT_TOKEN` | `ARONA_ADMIN_TOKEN` にフォールバック | agent 側が `/ws/agent` に送る Bearer トークン。パネルのオペレータートークンと一致する必要があります。 |
 | `ARONA_REGISTRATION_OPEN` | `0` | Truthy（`1`/`true`/`yes`/`on`）でサインアップを開放。 |
 | `ARONA_API_RATE_LIMIT_RPM` | `60` | キーごとのインメモリリクエスト制限（毎分）; `0` はすべてをブロック。 |
 | `MOCK_MODE` | 未設定 | 存在する（任意の値）だけで開発用 mock モードを有効化。 |

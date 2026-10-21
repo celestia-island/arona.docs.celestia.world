@@ -226,9 +226,7 @@ Streaming-RPC вроде `chat.send` создают id сессии (`gateway/rp
   перезапуск сбрасывает их. Лимитер на уровне auth ограничивает запросы
   на ключ на окно; лимитер billing-tier опирается на БД (см.
   [auth-security](auth-security.md) и [billing-usage](billing-usage.md)).
-- **`/ws/agent` не аутентифицирован** — плоскость управления агентами
-  принимает любой WebSocket, говорящий на протоколе register/heartbeat.
-  Это безопасно только в сети, которой вы управляете.
+- **`/ws/agent` требует операторский токен** — плоскость управления агентами принимает upgrade только у запросов с `Authorization: Bearer <operator token>`, совпадающим с `ARONA_ADMIN_TOKEN`; если токен панели не задан, срабатывает fail-closed. Текущий credential общий для всех агентов, а не идентичность каждого агента; см. [Agent Cluster](agent-cluster.md).
 - **Нет TLS на шлюзе** — сервер слушает обычный HTTP; терминируйте TLS
   впереди (reverse proxy) в любом развёртывании, пересекающем границу сети.
   См. [deployment](deployment.md).

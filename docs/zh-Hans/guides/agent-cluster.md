@@ -66,6 +66,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 | --- | --- | --- |
 | `ARONA_AGENT_NAME` | `arona-agent` | 唯一节点 id；panel 将其用作 `agent_id`。 |
 | `ARONA_PANEL_URL` | `localhost:8080` | Panel 的 `host:port`；agent 连接到 `ws://{ARONA_PANEL_URL}/ws/agent`。 |
+| `ARONA_AGENT_TOKEN` | 回退到 `ARONA_ADMIN_TOKEN` | agent 在 `/ws/agent` 升级时发送的 Bearer token；必须与 panel 的 operator token 相同。 |
 
 完整的环境变量参考见 [配置](./configuration.md)（panel 侧变量、数据库、密钥）。
 
@@ -73,6 +74,7 @@ arona download <repo> [--filter <glob|prefix>]... [--out <dir>] [--revision <rev
 # On each GPU node:
 export ARONA_AGENT_NAME="gpu-node-01"
 export ARONA_PANEL_URL="192.0.2.10:8420"   # the panel's host:port
+export ARONA_AGENT_TOKEN="<panel-operator-token>"   # must match the panel ARONA_ADMIN_TOKEN
 _agent
 ```
 
