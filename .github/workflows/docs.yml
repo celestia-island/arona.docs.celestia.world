@@ -27,7 +27,7 @@ jobs:
       # name. Disable the rewrite so git talks to github.com directly.
       GIT_CONFIG_COUNT: "0"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # lagrange is preinstalled at /mnt/work/runner-shared/lagrange (refreshed
       # from git master when lagrange changes) because GitHub-hosted runners
